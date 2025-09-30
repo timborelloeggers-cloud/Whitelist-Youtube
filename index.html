@@ -42,18 +42,17 @@
     .searchbar input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:1rem}
     .loadmore{display:block;width:100%;margin:14px 0;background:#1b1b1b;color:#eee;border:1px solid #2a2a2a;border-radius:999px;padding:.6rem;cursor:pointer}
     .hidden{display:none!important}
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:12px;z-index:200}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
     .overlay.show{display:flex}
-    .modal{width:min(960px,100%);background:#0b0b0b;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5)}
-    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #1f1f1f}
-    .modal-body{display:grid;gap:10px;padding:10px}
-    .modal iframe{width:100%;aspect-ratio:16/9;border:0}
+    .modal{width:95%;max-width:960px;max-height:95%;margin:auto;background:#0b0b0b;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
+    .modal-header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #1f1f1f}
+    .modal-body{overflow-y:auto;padding:10px}
+    .modal iframe{width:100%;aspect-ratio:16/9;border:0;margin-bottom:10px}
     .suggest{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
     .suggest .video-card{min-width:220px;}
     #playlistView .pl-head{display:flex;align-items:center;gap:8px;margin:6px 4px}
     #playlistView .pl-title{font-weight:700}
     .loading-msg, .error-msg{ text-align: center; padding: 20px; font-style: italic; color: var(--muted); }
-    .error-msg{ background:#330000; border:1px solid #660000; color:#ff6666; padding:10px; border-radius:8px; margin:10px 4px; }
     #statusBox{ padding: 10px; margin: 12px; border-radius: 8px; text-align: center; }
     #statusBox.error { background-color: #400; border: 1px solid #800; color: #f88; }
     #statusBox.loading { background-color: #222; border: 1px solid #444; color: #aaa; }
@@ -130,17 +129,15 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // ===== CONFIG =====
-    const API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w";
+    const API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w"; 
     
-    // *** OPTIMIERUNG: Feste Kanal-IDs, um teure Suchen zu vermeiden ***
-    // Diese IDs habe ich für dich nachgeschlagen.
     const ALLOWED_CHANNELS = [
-        { handle: "@jpperformance",   id: "UCi-y_G_p2a1gW2q5a_e72tA", uploadsId: "UUi-y_G_p2a1gW2q5a_e72tA" },
-        { handle: "@MotorenZimmer",   id: "UCm-Ld2b0so_2exh2_3e-0-g", uploadsId: "UUm-Ld2b0so_2exh2_3e-0-g" },
-        { handle: "@veritasium",      id: "UCHnyfMqiRRG1u-2MsSQLbXA", uploadsId: "UUHnyfMqiRRG1u-2MsSQLbXA" },
-        { handle: "@3blue1brown",     id: "UCYO_jab_2R6gL9Rzkl8cuKA", uploadsId: "UUYO_jab_2R6gL9Rzkl8cuKA" },
-        { handle: "@RealEngineering", id: "UCR1IuLEqb6UEA_zQ81kwXfg", uploadsId: "UUR1IuLEqb6UEA_zQ81kwXfg" },
-        { handle: "@Autodoktoren",    id: "UC_U4doD-Ew96dG23l6I8g-Q", uploadsId: "UU_U4doD-Ew96dG23l6I8g-Q" }
+        "@jpperformance",
+        "@MotorenZimmer",
+        "@veritasium",
+        "@3blue1brown",
+        "@RealEngineering",
+        "@Autodoktoren"
     ];
 
     // ===== STATE & ELEMENTS =====
@@ -170,10 +167,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const hideStatus = () => { els.statusBox.className = 'hidden'; };
     const createEl = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
     const fmtDate = s => new Date(s).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
+    
+    const isShort = (item) => {
+        const thumb = item?.snippet?.thumbnails?.medium;
+        const title = item?.snippet?.title || '';
+        if (thumb && (thumb.width / thumb.height) < 1.2) return true; // Aspect ratio check
+        if (title.toLowerCase().includes('#shorts')) return true; // Title check
+        return false;
+    };
 
     const api = async (path, params = {}) => {
         const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
-        params.key = API_KEY; params.part = params.part || 'snippet'; params.maxResults = params.maxResults || 12;
+        params.key = API_KEY; 
+        if (path !== 'search') {
+            params.part = params.part || 'snippet,contentDetails';
+        }
         Object.entries(params).forEach(([k, v]) => v && url.searchParams.set(k, v));
         const res = await fetch(url);
         if (!res.ok) {
@@ -182,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('API Error Response:', errorData);
             let userMessage = `API Fehler (${res.status}): ${reason}.`;
             if (reason === 'keyInvalid' || reason === 'accessNotConfigured') userMessage = 'Dein API-Schlüssel ist ungültig oder nicht für die YouTube API v3 freigeschaltet.';
-            else if (reason === 'ipRefererBlocked' || reason === 'keyExpired' || reason === 'applicationNotRegistered') userMessage = 'Dein API-Schlüssel hat falsche Beschränkungen (z.B. HTTP-Verweis). Setze sie in der Google Cloud Console testweise auf "Keine".';
+            else if (reason === 'ipRefererBlocked' || reason === 'keyExpired' || reason === 'applicationNotRegistered') userMessage = 'Dein API-Schlüssel hat falsche Beschränkungen. Setze sie in der Google Cloud Console auf "Keine".';
             else if (reason === 'quotaExceeded') userMessage = 'Das tägliche API-Kontingent (Quota) wurde überschritten.';
             throw new Error(userMessage);
         }
@@ -207,48 +215,156 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ===== DATA FETCHING & DISPLAY LOGIC =====
-    const getChannelInfo = async (id) => {
-        if (state.channels.has(id)) return state.channels.get(id);
-        const data = await api('channels', { part: 'snippet,contentDetails', id });
-        const c = data.items?.[0]; if (!c) throw new Error('Channel info not found for ID: ' + id);
-        const info = { id, title: c.snippet?.title || '?', thumb: c.snippet?.thumbnails?.default?.url, uploadsId: c.contentDetails?.relatedPlaylists?.uploads };
-        state.channels.set(id, info); return info;
+    const getChannelInfo = async (identifier) => {
+        if (state.channels.has(identifier)) return state.channels.get(identifier);
+
+        let channelId = identifier;
+        if (identifier.startsWith('@')) {
+            const searchData = await api('search', { q: identifier, type: 'channel', part: 'snippet', maxResults: 1 });
+            const searchResult = searchData.items?.[0];
+            if (!searchResult) throw new Error(`Kanal-Handle '${identifier}' nicht gefunden.`);
+            channelId = searchResult.snippet.channelId;
+        }
+        
+        const data = await api('channels', { id: channelId });
+        const c = data.items?.[0]; if (!c) throw new Error('Kanal-Info für ID: ' + channelId + ' nicht gefunden.');
+        
+        const info = { id: c.id, title: c.snippet?.title || '?', thumb: c.snippet?.thumbnails?.default?.url, uploadsId: c.contentDetails?.relatedPlaylists?.uploads };
+        state.channels.set(identifier, info);
+        state.channels.set(info.id, info);
+        return info;
     };
     
     const buildHome = async () => {
         showStatus('Lade Kanäle und neueste Videos...');
         els.channelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
         
-        // Kanal-Kacheln aus der festen Liste erstellen (keine API-Kosten)
-        const infoPromises = ALLOWED_CHANNELS.map(ch => getChannelInfo(ch.id));
+        const infoPromises = ALLOWED_CHANNELS.map(handle => getChannelInfo(handle));
         const infoResults = await Promise.allSettled(infoPromises);
-        infoResults.filter(r => r.status === 'fulfilled').forEach(r => {
-            els.channelGrid.appendChild(renderChannelCard(r.value));
+
+        const successfulChannels = [];
+        infoResults.forEach(result => {
+            if (result.status === 'fulfilled' && result.value) {
+                els.channelGrid.appendChild(renderChannelCard(result.value));
+                successfulChannels.push(result.value);
+            } else {
+                console.error("Konnte Kanal-Info nicht laden:", result.reason);
+            }
         });
 
-        // Neueste Videos effizient laden (nur 1 Einheit pro Kanal)
-        const videoPromises = ALLOWED_CHANNELS.map(ch => api('playlistItems', { playlistId: ch.uploadsId, maxResults: 4 }));
-        const videoResults = await Promise.allSettled(videoPromises);
-        const allVideos = videoResults.filter(r => r.status === 'fulfilled').flatMap(r => r.value.items || [])
-            .map(it => ({
-                videoId: it.contentDetails.videoId,
-                title: it.snippet.title,
-                date: it.snippet.publishedAt,
-                thumb: it.snippet.thumbnails?.medium?.url
-            }));
-        allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        if (allVideos.length === 0) {
-            els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen Videos gefunden.</div>`;
+        if (successfulChannels.length > 0) {
+            const videoPromises = successfulChannels.map(info => api('playlistItems', { playlistId: info.uploadsId, maxResults: 12 }));
+            const videoResults = await Promise.allSettled(videoPromises);
+            const allVideos = videoResults
+                .filter(r => r.status === 'fulfilled' && r.value.items)
+                .flatMap(r => r.value.items)
+                .filter(it => it.contentDetails && it.contentDetails.videoId && !isShort(it))
+                .map(it => ({
+                    videoId: it.contentDetails.videoId,
+                    title: it.snippet.title,
+                    date: it.snippet.publishedAt,
+                    thumb: it.snippet.thumbnails?.medium?.url,
+                    channelId: it.snippet.channelId
+                }));
+            
+            allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (allVideos.length === 0) {
+                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen Videos (ohne Shorts) gefunden.</div>`;
+            } else {
+                allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v, { channelId: v.channelId })));
+            }
         } else {
-            allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v)));
+             els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Kanäle konnten geladen werden.</div>`;
         }
         hideStatus();
     };
     
-    const showChannelContent = async (type, { reset = true } = {}) => { /* ... unverändert ... */ };
-    const renderPlaylistVideos = async ({ reset = true } = {}) => { /* ... unverändert ... */ };
-    const searchInChannel = async () => { /* ... unverändert ... */ };
+    const showChannelContent = async (type, { reset = true } = {}) => {
+        const isVideos = type === 'videos';
+        const tabEl = isVideos ? els.videosTab : els.playlistsTab;
+        const otherTabEl = isVideos ? els.playlistsTab : els.videosTab;
+        const moreBtn = isVideos ? els.moreVideosBtn : els.morePlaylistsBtn;
+        const pageTokenKey = isVideos ? 'videosPageToken' : 'playlistsPageToken';
+        if (reset) { tabEl.innerHTML = ''; state.current[pageTokenKey] = null; }
+        showStatus(`Lade ${type}...`, false);
+        tabEl.classList.remove('hidden'); otherTabEl.classList.add('hidden');
+        try {
+            const info = await getChannelInfo(state.current.channelId);
+            const data = isVideos 
+                ? await api('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey] })
+                : await api('playlists', { channelId: state.current.channelId, pageToken: state.current[pageTokenKey] });
+            state.current[pageTokenKey] = data.nextPageToken || null;
+            if (reset) tabEl.innerHTML = '';
+
+            let items = (data.items || []).filter(it => it.snippet.thumbnails); // Nur Items mit Thumbnails weiterverarbeiten
+            if (isVideos) {
+                items = items.filter(it => !isShort(it));
+            }
+
+            items.forEach(it => {
+                if (isVideos) {
+                    if (it.contentDetails && it.contentDetails.videoId) {
+                        tabEl.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails?.medium?.url }, { channelId: info.id }));
+                    }
+                } else {
+                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url }));
+                }
+            });
+            moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
+            hideStatus();
+        } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, true); }
+    };
+        
+    const renderPlaylistVideos = async ({ reset = true } = {}) => {
+        if (reset) { state.current.playlistVideosPageToken = null; els.playlistVideos.innerHTML = ''; }
+        showStatus('Lade Playlist-Inhalte...', false);
+        try {
+            const data = await api('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15 });
+            state.current.playlistVideosPageToken = data.nextPageToken || null;
+            const playlistContext = { playlistId: state.playlistContext.playlistId, channelId: state.playlistContext.channelId };
+            
+            (data.items || [])
+                .filter(it => it.contentDetails && it.contentDetails.videoId && !isShort(it))
+                .forEach(it => {
+                    els.playlistVideos.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails.medium.url }, playlistContext));
+                });
+
+            els.morePlaylistVideosBtn.classList.toggle('hidden', !state.current.playlistVideosPageToken);
+            hideStatus();
+        } catch(e) { showStatus(`Fehler beim Laden der Playlist: ${e.message}`, true); }
+    };
+
+    const searchInChannel = async () => {
+        const q = els.searchInput.value.trim();
+        if (!q) return;
+
+        const searchType = state.current.tab === 'playlists' ? 'playlist' : 'video';
+        const tabEl = searchType === 'playlist' ? els.playlistsTab : els.videosTab;
+        
+        (searchType === 'playlist' ? els.videosTab : els.playlistsTab).classList.add('hidden');
+        tabEl.classList.remove('hidden');
+
+        showStatus(`Suche nach "${q}"...`);
+        tabEl.innerHTML = '';
+        try {
+            const data = await api('search', { channelId: state.current.channelId, q, type: searchType, part: 'snippet', maxResults: 25 });
+            
+            let items = (data.items || []).filter(it => it.snippet.thumbnails);
+            if (searchType === 'video') {
+                items = items.filter(it => !isShort(it));
+            }
+
+            items.forEach(it => {
+                if (searchType === 'video') {
+                    tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url }, { channelId: state.current.channelId }));
+                } else {
+                    tabEl.appendChild(playlistCard({ playlistId: it.id.playlistId, channelId: it.snippet.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url }));
+                }
+            });
+            hideStatus();
+        } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
+    };
 
     // ===== NAVIGATION & ROUTING =====
     const navigate = (hash) => { window.location.hash = hash; };
@@ -266,7 +382,29 @@ document.addEventListener('DOMContentLoaded', () => {
         else if(state.current.channelId) navigate(`channel/${state.current.channelId}/playlists`);
         else navigate('home');
     };
-    const openPlayer = async (videoId, title, context) => { /* ... unverändert ... */ };
+    const openPlayer = async (videoId, title, context) => {
+        els.playerTitle.textContent = title || 'Video';
+        els.playerIframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&autoplay=1`;
+        els.overlay.classList.add('show');
+        els.suggestList.innerHTML = '';
+        try {
+            let items = [];
+            const currentChannelId = context?.channelId || state.current.channelId;
+            if (context?.playlistId) {
+                const data = await api('playlistItems', { playlistId: context.playlistId, maxResults: 15 });
+                items = data.items || [];
+            } else if (currentChannelId) {
+                const info = await getChannelInfo(currentChannelId);
+                const data = await api('playlistItems', { playlistId: info.uploadsId, maxResults: 15 });
+                items = data.items;
+            }
+            (items || [])
+                .filter(it => it.contentDetails && it.contentDetails.videoId !== videoId && !isShort(it))
+                .forEach(it => {
+                    els.suggestList.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, thumb: it.snippet.thumbnails?.medium?.url }, { channelId: currentChannelId }));
+                });
+        } catch(e) { console.warn("Could not load suggestions", e); }
+    };
     const closePlayer = () => { els.overlay.classList.remove('show'); els.playerIframe.src = 'about:blank'; };
     const openPlaylist = (playlistId, channelId, title) => {
         state.lastChannelRoute = `channel/${channelId}/playlists`;
@@ -320,93 +458,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== APP INITIALIZATION =====
     const init = async () => {
         try {
-            // Unveränderte Funktionen hier einfügen, damit sie im Scope sind
-            openPlayer = async (videoId, title, context) => {
-                els.playerTitle.textContent = title || 'Video';
-                els.playerIframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&autoplay=1`;
-                els.overlay.classList.add('show');
-                els.suggestList.innerHTML = '';
-                try {
-                    let items = [];
-                    const currentChannelId = state.current.channelId || context?.channelId;
-                    if (context?.playlistId) {
-                        const data = await api('playlistItems', { playlistId: context.playlistId, maxResults: 15 });
-                        items = data.items || [];
-                    } else if (currentChannelId) {
-                        const info = await getChannelInfo(currentChannelId);
-                        const data = await api('playlistItems', { playlistId: info.uploadsId, maxResults: 15 });
-                        items = data.items || [];
-                    }
-                    items.filter(it => it.contentDetails?.videoId !== videoId).forEach(it => {
-                        els.suggestList.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, thumb: it.snippet.thumbnails?.medium?.url }, context));
-                    });
-                } catch(e) { console.warn("Could not load suggestions", e); }
-            };
-
-            showChannelContent = async (type, { reset = true } = {}) => {
-                const isVideos = type === 'videos';
-                const tabEl = isVideos ? els.videosTab : els.playlistsTab;
-                const otherTabEl = isVideos ? els.playlistsTab : els.videosTab;
-                const moreBtn = isVideos ? els.moreVideosBtn : els.morePlaylistsBtn;
-                const pageTokenKey = isVideos ? 'videosPageToken' : 'playlistsPageToken';
-                if (reset) { tabEl.innerHTML = ''; state.current[pageTokenKey] = null; }
-                showStatus(`Lade ${type}...`, false);
-                tabEl.classList.remove('hidden'); otherTabEl.classList.add('hidden');
-                try {
-                    const info = await getChannelInfo(state.current.channelId);
-                    const data = isVideos 
-                        ? await api('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey] })
-                        : await api('playlists', { channelId: state.current.channelId, pageToken: state.current[pageTokenKey] });
-                    state.current[pageTokenKey] = data.nextPageToken || null;
-                    if (reset) tabEl.innerHTML = '';
-                    (data.items || []).forEach(it => {
-                        if (isVideos) {
-                            if (it.snippet.title !== 'Private video' && it.snippet.title !== 'Deleted video') {
-                                tabEl.appendChild(videoCard({ videoId: it.contentDetails?.videoId, title: it.snippet?.title, date: it.contentDetails?.videoPublishedAt, thumb: it.snippet?.thumbnails?.medium?.url }));
-                            }
-                        } else {
-                            tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet?.title, date: it.snippet?.publishedAt, thumb: it.snippet?.thumbnails?.medium?.url }));
-                        }
-                    });
-                    moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
-                    hideStatus();
-                } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, true); }
-            };
-            
-            renderPlaylistVideos = async ({ reset = true } = {}) => {
-                if (reset) { state.current.playlistVideosPageToken = null; els.playlistVideos.innerHTML = ''; }
-                showStatus('Lade Playlist-Inhalte...', false);
-                try {
-                    const data = await api('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15 });
-                    state.current.playlistVideosPageToken = data.nextPageToken || null;
-                    const playlistContext = { playlistId: state.playlistContext.playlistId };
-                    (data.items || []).filter(it => it.snippet?.thumbnails?.medium?.url).forEach(it => {
-                        els.playlistVideos.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails.medium.url }, playlistContext));
-                    });
-                    els.morePlaylistVideosBtn.classList.toggle('hidden', !state.current.playlistVideosPageToken);
-                    hideStatus();
-                } catch(e) { showStatus(`Fehler beim Laden der Playlist: ${e.message}`, true); }
-            };
-
-            searchInChannel = async () => {
-                const q = els.searchInput.value.trim();
-                if (!q) return;
-                const tabEl = state.current.tab === 'videos' ? els.videosTab : els.playlistsTab;
-                showStatus(`Suche nach "${q}"...`);
-                tabEl.innerHTML = '';
-                try {
-                    const data = await api('search', { channelId: state.current.channelId, q, type: state.current.tab, maxResults: 25 });
-                    (data.items || []).forEach(it => {
-                        if (state.current.tab === 'videos') {
-                            tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url }));
-                        } else {
-                            tabEl.appendChild(playlistCard({ playlistId: it.id.playlistId, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url }));
-                        }
-                    });
-                    hideStatus();
-                } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
-            };
-
             setupEventListeners();
             await handleRoute();
         } catch (e) {
@@ -415,9 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Globale Referenzen für die init-Funktion
-    let openPlayer, showChannelContent, renderPlaylistVideos, searchInChannel;
-
     init();
 });
 </script>
