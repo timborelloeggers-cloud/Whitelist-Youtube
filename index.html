@@ -15,6 +15,7 @@
     header{position:sticky;top:0;z-index:100;backdrop-filter:saturate(140%) blur(6px);background:rgba(10,10,10,.75);border-bottom:1px solid rgba(255,255,255,.06)}
     .topbar{max-width:1200px;margin:0 auto;padding:.6rem .75rem;display:flex;gap:.5rem;align-items:center}
     .btn{border:none;background:#252525;color:#eee;border:1px solid #2f2f2f;padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem;}
+    .btn.active{background:var(--accent);border-color:transparent;color:#fff}
     .pill{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .7rem;border-radius:999px;background:#1c1c1c;border:1px solid #2a2a2a;color:#eee}
     main{max-width:1200px;margin:0 auto;padding:12px}
     .section{margin-top:14px}
@@ -38,8 +39,15 @@
     .tabs{display:flex;gap:8px;margin:8px 4px}
     .tab{padding:.5rem .8rem;border-radius:999px;background:#1d1d1d;border:1px solid #2a2a2a;cursor:pointer}
     .tab.active{background:var(--accent);border-color:transparent;color:#fff}
-    .searchbar{display:flex;gap:8px;align-items:center;padding:8px;background:#121212;border:1px solid #262626;border-radius:999px;margin:6px 4px}
+    .searchbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px;background:#121212;border:1px solid #262626;border-radius:var(--radius);margin:6px 4px}
+    .searchbar .input-wrapper{flex:1;display:flex;min-width:200px}
     .searchbar input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:1rem}
+    .sort-options{display:flex;gap:6px;width:100%;padding:4px 0 0 8px;}
+    .searchbar .btn, .sort-options .btn { padding:.35rem .7rem; font-size:.85rem; }
+    #channelBannerContainer{position: relative;width: 100%;min-height: 120px;border-radius: calc(var(--radius) - 4px);margin-bottom: 12px;overflow: hidden;background-color: #222;display: flex;align-items: center;justify-content: center;}
+    #channelBannerBackground{position: absolute;inset: 0;background-size: cover;background-position: center center;filter: blur(8px) brightness(0.6);transform: scale(1.05);}
+    #channelBanner{position: relative;max-width: 60%;max-height: 100px;aspect-ratio: 4/1;background-size: contain;background-repeat: no-repeat;background-position: center center;border-radius: var(--radius);box-shadow: var(--shadow);background-color: rgba(0,0,0,0.3);}
+    @media (max-width: 768px) { #channelBanner{ max-width: 80%; } }
     .loadmore{display:block;width:100%;margin:14px 0;background:#1b1b1b;color:#eee;border:1px solid #2a2a2a;border-radius:999px;padding:.6rem;cursor:pointer}
     .hidden{display:none!important}
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
@@ -65,7 +73,7 @@
     <button class="btn" id="backBtn">← Zurück</button>
     <button class="btn" id="homeBtn">Home</button>
     <button class="btn" id="forwardBtn">Weiter →</button>
-    <div style="margin-left:auto" class="pill" id="activeChannelPill" hidden></div>
+    <div style="margin-left:auto; display: none;" class="pill" id="activeChannelPill"></div>
   </div>
 </header>
 
@@ -82,12 +90,24 @@
   </section>
 
   <section id="channelView" class="section hidden">
+    <div id="channelBannerContainer" class="hidden">
+        <div id="channelBannerBackground"></div>
+        <div id="channelBanner"></div>
+    </div>
     <div class="searchbar">
-      <input id="searchInput" placeholder="Im Kanal nach Titeln suchen…"/>
-      <button class="btn" id="searchBtn">Suchen</button>
+      <div class="input-wrapper">
+        <input id="searchInput" placeholder="Im Kanal suchen…"/>
+        <button class="btn" id="searchBtn">Suchen</button>
+      </div>
+      <div class="sort-options hidden" id="sortOptions">
+        <span class="sub">Sortieren:</span>
+        <button class="btn active" data-sort="date">Neueste</button>
+        <button class="btn" data-sort="relevance">Relevanz</button>
+        <button class="btn" data-sort="viewCount">Beliebt</button>
+      </div>
     </div>
     <div class="tabs">
-      <button class="tab active" data-tab="videos">Videos</button>
+      <button class="tab" data-tab="videos">Videos</button>
       <button class="tab" data-tab="playlists">Playlists</button>
     </div>
     <div id="channelMeta" class="sub" style="margin:6px 4px"></div>
@@ -132,17 +152,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w"; 
     
     const ALLOWED_CHANNELS = [
-        "@jpperformance",
-        "@MotorenZimmer",
-        "@veritasium",
-        "@3blue1brown",
-        "@RealEngineering",
-        "@Autodoktoren"
+        "@jpperformance", "@MotorenZimmer", "@veritasium",
+        "@3blue1brown", "@RealEngineering", "@Autodoktoren"
     ];
 
     // ===== STATE & ELEMENTS =====
     const state = {
-        channels: new Map(), current: { channelId: null, tab: 'videos', videosPageToken: null, playlistsPageToken: null, playlistVideosPageToken: null },
+        channels: new Map(), 
+        current: { 
+            channelId: null, tab: 'videos', videosPageToken: null, 
+            playlistsPageToken: null, playlistVideosPageToken: null,
+            searchQuery: null, searchOrder: 'date' 
+        },
         lastChannelRoute: null, playlistContext: { playlistId: null, channelId: null, title: null }
     };
     const els = {
@@ -152,6 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
         videosTab: document.getElementById('videosTab'), playlistsTab: document.getElementById('playlistsTab'),
         moreVideosBtn: document.getElementById('moreVideosBtn'), morePlaylistsBtn: document.getElementById('morePlaylistsBtn'),
         searchInput: document.getElementById('searchInput'), searchBtn: document.getElementById('searchBtn'),
+        sortOptions: document.getElementById('sortOptions'), sortButtons: document.querySelectorAll('[data-sort]'),
+        channelBannerContainer: document.getElementById('channelBannerContainer'),
+        channelBannerBackground: document.getElementById('channelBannerBackground'),
+        channelBanner: document.getElementById('channelBanner'),
         channelMeta: document.getElementById('channelMeta'), activeChannelPill: document.getElementById('activeChannelPill'),
         overlay: document.getElementById('playerOverlay'), playerClose: document.getElementById('playerClose'),
         playerIframe: document.getElementById('playerIframe'), playerTitle: document.getElementById('playerTitle'),
@@ -168,20 +193,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const createEl = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
     const fmtDate = s => new Date(s).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
     
-    const isShort = (item) => {
-        const thumb = item?.snippet?.thumbnails?.medium;
-        const title = item?.snippet?.title || '';
-        if (thumb && (thumb.width / thumb.height) < 1.2) return true; // Aspect ratio check
-        if (title.toLowerCase().includes('#shorts')) return true; // Title check
-        return false;
+    const parseISO8601Duration = (duration) => {
+        if (!duration) return 0;
+        const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+        if (!match) return 0;
+        const hours = (parseInt(match[1]) || 0);
+        const minutes = (parseInt(match[2]) || 0);
+        const seconds = (parseInt(match[3]) || 0);
+        return hours * 3600 + minutes * 60 + seconds;
     };
 
     const api = async (path, params = {}) => {
         const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
         params.key = API_KEY; 
-        if (path !== 'search') {
-            params.part = params.part || 'snippet,contentDetails';
-        }
         Object.entries(params).forEach(([k, v]) => v && url.searchParams.set(k, v));
         const res = await fetch(url);
         if (!res.ok) {
@@ -189,9 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const reason = errorData.error?.errors?.[0]?.reason || 'unknownError';
             console.error('API Error Response:', errorData);
             let userMessage = `API Fehler (${res.status}): ${reason}.`;
-            if (reason === 'keyInvalid' || reason === 'accessNotConfigured') userMessage = 'Dein API-Schlüssel ist ungültig oder nicht für die YouTube API v3 freigeschaltet.';
-            else if (reason === 'ipRefererBlocked' || reason === 'keyExpired' || reason === 'applicationNotRegistered') userMessage = 'Dein API-Schlüssel hat falsche Beschränkungen. Setze sie in der Google Cloud Console auf "Keine".';
-            else if (reason === 'quotaExceeded') userMessage = 'Das tägliche API-Kontingent (Quota) wurde überschritten.';
+            if (reason === 'quotaExceeded') userMessage = 'Das tägliche API-Kontingent (Quota) wurde überschritten.';
             throw new Error(userMessage);
         }
         return res.json();
@@ -205,19 +227,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const videoCard = (v, context = {}) => {
         const card = createEl('div', 'video-card');
-        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${v.thumb || ''}" alt="">${v.date ? `<span class="chip">${fmtDate(v.date)}</span>` : ''}</div><div class="card-body"><div class="title">${v.title || '?'}</div><div class="meta">Video</div></div>`;
+        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${v.thumb || ''}" alt="">${v.date ? `<span class="chip">${fmtDate(v.date)}</span>` : ''}</div><div class="card-body"><div class="title">${v.title || '?'}</div><div class="meta">${v.channelTitle || 'Video'}</div></div>`;
         card.addEventListener('click', () => openPlayer(v.videoId, v.title, context)); return card;
     };
     const playlistCard = (p) => {
         const card = createEl('div', 'video-card');
-        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta">Playlist</div></div>`;
+        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta">${p.channelTitle || 'Playlist'}</div></div>`;
         card.addEventListener('click', () => openPlaylist(p.playlistId, p.channelId, p.title)); return card;
     };
 
     // ===== DATA FETCHING & DISPLAY LOGIC =====
     const getChannelInfo = async (identifier) => {
-        if (state.channels.has(identifier)) return state.channels.get(identifier);
-
+        if (state.channels.has(identifier) && state.channels.get(identifier).banner) {
+             return state.channels.get(identifier);
+        }
         let channelId = identifier;
         if (identifier.startsWith('@')) {
             const searchData = await api('search', { q: identifier, type: 'channel', part: 'snippet', maxResults: 1 });
@@ -226,15 +249,56 @@ document.addEventListener('DOMContentLoaded', () => {
             channelId = searchResult.snippet.channelId;
         }
         
-        const data = await api('channels', { id: channelId });
+        const data = await api('channels', { id: channelId, part: 'snippet,contentDetails,brandingSettings' });
         const c = data.items?.[0]; if (!c) throw new Error('Kanal-Info für ID: ' + channelId + ' nicht gefunden.');
         
-        const info = { id: c.id, title: c.snippet?.title || '?', thumb: c.snippet?.thumbnails?.default?.url, uploadsId: c.contentDetails?.relatedPlaylists?.uploads };
+        let banner = c.brandingSettings?.image?.bannerTvImageUrl 
+                     || c.brandingSettings?.image?.bannerTabletImageUrl
+                     || c.brandingSettings?.image?.bannerMobileImageUrl
+                     || c.brandingSettings?.image?.bannerExternalUrl;
+        
+        if (banner) {
+            banner = banner.replace(/=w\d+/, '=w2560');
+        }
+
+        const info = { 
+            id: c.id, 
+            title: c.snippet?.title || '?', 
+            thumb: c.snippet?.thumbnails?.default?.url, 
+            uploadsId: c.contentDetails?.relatedPlaylists?.uploads,
+            banner: banner
+        };
         state.channels.set(identifier, info);
         state.channels.set(info.id, info);
         return info;
     };
     
+    const filterShortsByDuration = async (items, idKey = 'videoId') => {
+        if (!items || items.length === 0) return [];
+        
+        // Helper function to get the video ID from different item structures
+        const getVideoId = (item, key) => {
+            if (key === 'contentDetails') return item.contentDetails?.videoId;
+            if (key === 'id') return item.id?.videoId;
+            return null;
+        };
+
+        const videoIds = items.map(it => getVideoId(it, idKey)).filter(Boolean).join(',');
+        if (!videoIds) return [];
+
+        const videoData = await api('videos', { id: videoIds, part: 'contentDetails' });
+        
+        const durationMap = new Map();
+        videoData.items.forEach(v => {
+            durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration));
+        });
+        
+        return items.filter(it => {
+            const videoId = getVideoId(it, idKey);
+            return durationMap.get(videoId) > 120;
+        });
+    };
+
     const buildHome = async () => {
         showStatus('Lade Kanäle und neueste Videos...');
         els.channelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
@@ -247,30 +311,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.status === 'fulfilled' && result.value) {
                 els.channelGrid.appendChild(renderChannelCard(result.value));
                 successfulChannels.push(result.value);
-            } else {
-                console.error("Konnte Kanal-Info nicht laden:", result.reason);
-            }
+            } else { console.error("Konnte Kanal-Info nicht laden:", result.reason); }
         });
 
         if (successfulChannels.length > 0) {
-            const videoPromises = successfulChannels.map(info => api('playlistItems', { playlistId: info.uploadsId, maxResults: 12 }));
+            const videoPromises = successfulChannels.map(info => api('playlistItems', { playlistId: info.uploadsId, maxResults: 5, part: 'snippet,contentDetails' }).then(data => ({...data, channelTitle: info.title })));
             const videoResults = await Promise.allSettled(videoPromises);
-            const allVideos = videoResults
+            
+            let allItems = videoResults
                 .filter(r => r.status === 'fulfilled' && r.value.items)
-                .flatMap(r => r.value.items)
-                .filter(it => it.contentDetails && it.contentDetails.videoId && !isShort(it))
-                .map(it => ({
-                    videoId: it.contentDetails.videoId,
-                    title: it.snippet.title,
-                    date: it.snippet.publishedAt,
-                    thumb: it.snippet.thumbnails?.medium?.url,
-                    channelId: it.snippet.channelId
+                .flatMap(r => r.value.items.map(item => ({...item, channelTitle: r.value.channelTitle })))
+                .filter(it => it.contentDetails && it.contentDetails.videoId);
+
+            const nonShorts = await filterShortsByDuration(allItems, 'contentDetails');
+
+            const latestVideos = successfulChannels.map(info => {
+                return nonShorts.find(v => v.snippet.channelId === info.id);
+            }).filter(Boolean);
+
+            const allVideos = latestVideos.map(it => ({
+                    videoId: it.contentDetails.videoId, title: it.snippet.title,
+                    date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url,
+                    channelId: it.snippet.channelId, channelTitle: it.channelTitle
                 }));
             
             allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             if (allVideos.length === 0) {
-                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen Videos (ohne Shorts) gefunden.</div>`;
+                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen Videos (länger als 2 Min.) gefunden.</div>`;
             } else {
                 allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v, { channelId: v.channelId })));
             }
@@ -281,34 +349,40 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const showChannelContent = async (type, { reset = true } = {}) => {
+        els.sortOptions.classList.add('hidden');
+        els.searchInput.value = '';
+        state.current.searchQuery = null;
+
         const isVideos = type === 'videos';
         const tabEl = isVideos ? els.videosTab : els.playlistsTab;
         const otherTabEl = isVideos ? els.playlistsTab : els.videosTab;
         const moreBtn = isVideos ? els.moreVideosBtn : els.morePlaylistsBtn;
+        
+        els.moreVideosBtn.classList.add('hidden');
+        els.morePlaylistsBtn.classList.add('hidden');
+
         const pageTokenKey = isVideos ? 'videosPageToken' : 'playlistsPageToken';
         if (reset) { tabEl.innerHTML = ''; state.current[pageTokenKey] = null; }
         showStatus(`Lade ${type}...`, false);
         tabEl.classList.remove('hidden'); otherTabEl.classList.add('hidden');
         try {
             const info = await getChannelInfo(state.current.channelId);
-            const data = isVideos 
-                ? await api('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey] })
-                : await api('playlists', { channelId: state.current.channelId, pageToken: state.current[pageTokenKey] });
+            let data = isVideos 
+                ? await api('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey], part: 'snippet,contentDetails' })
+                : await api('playlists', { channelId: state.current.channelId, pageToken: state.current[pageTokenKey], part: 'snippet' });
             state.current[pageTokenKey] = data.nextPageToken || null;
             if (reset) tabEl.innerHTML = '';
 
-            let items = (data.items || []).filter(it => it.snippet.thumbnails); // Nur Items mit Thumbnails weiterverarbeiten
+            let items = (data.items || []).filter(it => it.snippet.thumbnails);
             if (isVideos) {
-                items = items.filter(it => !isShort(it));
+                items = await filterShortsByDuration(items, 'contentDetails');
             }
 
             items.forEach(it => {
                 if (isVideos) {
-                    if (it.contentDetails && it.contentDetails.videoId) {
-                        tabEl.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails?.medium?.url }, { channelId: info.id }));
-                    }
+                    tabEl.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }, { channelId: info.id }));
                 } else {
-                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url }));
+                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
                 }
             });
             moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
@@ -320,15 +394,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (reset) { state.current.playlistVideosPageToken = null; els.playlistVideos.innerHTML = ''; }
         showStatus('Lade Playlist-Inhalte...', false);
         try {
-            const data = await api('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15 });
+            const info = await getChannelInfo(state.playlistContext.channelId);
+            const data = await api('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet,contentDetails' });
             state.current.playlistVideosPageToken = data.nextPageToken || null;
             const playlistContext = { playlistId: state.playlistContext.playlistId, channelId: state.playlistContext.channelId };
             
-            (data.items || [])
-                .filter(it => it.contentDetails && it.contentDetails.videoId && !isShort(it))
-                .forEach(it => {
-                    els.playlistVideos.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails.medium.url }, playlistContext));
-                });
+            const nonShorts = await filterVideosByDuration(data.items || [], 'contentDetails');
+            nonShorts.forEach(it => {
+                els.playlistVideos.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title }, playlistContext));
+            });
 
             els.morePlaylistVideosBtn.classList.toggle('hidden', !state.current.playlistVideosPageToken);
             hideStatus();
@@ -337,30 +411,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const searchInChannel = async () => {
         const q = els.searchInput.value.trim();
-        if (!q) return;
+        state.current.searchQuery = q;
+        if (!q) {
+            els.sortOptions.classList.add('hidden');
+            showChannelContent(state.current.tab, { reset: true });
+            return;
+        }
 
-        const searchType = state.current.tab === 'playlists' ? 'playlist' : 'video';
-        const tabEl = searchType === 'playlist' ? els.playlistsTab : els.videosTab;
+        els.moreVideosBtn.classList.add('hidden');
+        els.morePlaylistsBtn.classList.add('hidden');
+        els.sortOptions.classList.remove('hidden');
+        els.sortButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
         
-        (searchType === 'playlist' ? els.videosTab : els.playlistsTab).classList.add('hidden');
-        tabEl.classList.remove('hidden');
-
+        const searchType = 'video';
+        const tabEl = els.videosTab;
+        
         showStatus(`Suche nach "${q}"...`);
         tabEl.innerHTML = '';
         try {
-            const data = await api('search', { channelId: state.current.channelId, q, type: searchType, part: 'snippet', maxResults: 25 });
+            const query = `"${q}"`;
+            const data = await api('search', { channelId: state.current.channelId, q: query, type: searchType, part: 'snippet', maxResults: 25, order: state.current.searchOrder });
+            const info = await getChannelInfo(state.current.channelId);
             
             let items = (data.items || []).filter(it => it.snippet.thumbnails);
-            if (searchType === 'video') {
-                items = items.filter(it => !isShort(it));
-            }
+            items = await filterVideosByDuration(items, 'id');
 
             items.forEach(it => {
-                if (searchType === 'video') {
-                    tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url }, { channelId: state.current.channelId }));
-                } else {
-                    tabEl.appendChild(playlistCard({ playlistId: it.id.playlistId, channelId: it.snippet.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url }));
-                }
+                tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title }, { channelId: state.current.channelId }));
             });
             hideStatus();
         } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
@@ -390,18 +467,20 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let items = [];
             const currentChannelId = context?.channelId || state.current.channelId;
+            const info = await getChannelInfo(currentChannelId);
             if (context?.playlistId) {
-                const data = await api('playlistItems', { playlistId: context.playlistId, maxResults: 15 });
+                const data = await api('playlistItems', { playlistId: context.playlistId, maxResults: 15, part: 'snippet,contentDetails' });
                 items = data.items || [];
             } else if (currentChannelId) {
-                const info = await getChannelInfo(currentChannelId);
-                const data = await api('playlistItems', { playlistId: info.uploadsId, maxResults: 15 });
+                const data = await api('playlistItems', { playlistId: info.uploadsId, maxResults: 15, part: 'snippet,contentDetails' });
                 items = data.items;
             }
-            (items || [])
-                .filter(it => it.contentDetails && it.contentDetails.videoId !== videoId && !isShort(it))
+
+            const nonShorts = await filterVideosByDuration(items || [], 'contentDetails');
+            nonShorts
+                .filter(it => it.contentDetails.videoId !== videoId)
                 .forEach(it => {
-                    els.suggestList.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, thumb: it.snippet.thumbnails?.medium?.url }, { channelId: currentChannelId }));
+                    els.suggestList.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }, { channelId: currentChannelId }));
                 });
         } catch(e) { console.warn("Could not load suggestions", e); }
     };
@@ -412,22 +491,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const handleRoute = async () => {
+        els.activeChannelPill.style.display = 'none'; 
         const r = parseRoute();
         hideStatus();
         try {
             if (r.view === 'home' || !r.view) {
-                setView('home'); els.activeChannelPill.hidden = true;
+                setView('home');
                 await buildHome();
             } else if (r.view === 'channel' && r.id) {
-                setView('channel'); state.current.channelId = r.id; state.current.tab = r.tab || 'videos';
-                els.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === state.current.tab));
+                setView('channel'); 
+                state.current.channelId = r.id; 
+                state.current.tab = r.tab || 'videos';
+                els.tabs.forEach(t => {
+                    t.classList.remove('active');
+                    if(t.dataset.tab === state.current.tab) t.classList.add('active');
+                });
                 const info = await getChannelInfo(r.id);
-                els.activeChannelPill.textContent = info.title; els.activeChannelPill.hidden = false; els.channelMeta.textContent = info.title;
+                els.activeChannelPill.textContent = info.title; 
+                els.activeChannelPill.style.display = 'inline-flex'; 
+                els.channelMeta.textContent = info.title;
+
+                if (info.banner) {
+                    els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
+                    els.channelBanner.style.backgroundImage = `url(${info.banner})`;
+                    els.channelBannerContainer.classList.remove('hidden');
+                } else {
+                    els.channelBannerContainer.classList.add('hidden');
+                }
                 await showChannelContent(state.current.tab, { reset: true });
             } else if (r.view === 'playlist' && r.id) {
-                setView('playlist'); const [playlistId, channelId] = r.id.split(':');
+                setView('playlist'); 
+                const [playlistId, channelId] = r.id.split(':');
                 state.playlistContext = { playlistId, channelId, title: r.title || 'Playlist' };
                 els.playlistTitle.textContent = state.playlistContext.title;
+                const info = await getChannelInfo(channelId);
+                els.activeChannelPill.textContent = info.title; 
+                els.activeChannelPill.style.display = 'inline-flex';
                 await renderPlaylistVideos({ reset: true });
             }
         } catch (e) {
@@ -439,20 +538,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== EVENT LISTENERS =====
     const setupEventListeners = () => {
         window.addEventListener('hashchange', handleRoute);
-        els.homeBtn.addEventListener('click', () => navigate('home'));
+        els.homeBtn.addEventListener('click', () => {
+            navigate('home');
+        });
         els.backBtn.addEventListener('click', () => history.back());
         els.forwardBtn.addEventListener('click', () => history.forward());
         els.backToChannelBtn.addEventListener('click', backToChannel);
         els.playerClose.addEventListener('click', closePlayer);
         els.overlay.addEventListener('click', e => { if (e.target === els.overlay) closePlayer(); });
         els.tabs.forEach(btn => {
-            btn.addEventListener('click', () => { if (state.current.channelId) navigate(`channel/${state.current.channelId}/${btn.dataset.tab}`); });
+            btn.addEventListener('click', () => { 
+                if (state.current.channelId) {
+                    navigate(`channel/${state.current.channelId}/${btn.dataset.tab}`);
+                }
+            });
         });
         els.moreVideosBtn.addEventListener('click', () => showChannelContent('videos', { reset: false }));
         els.morePlaylistsBtn.addEventListener('click', () => showChannelContent('playlists', { reset: false }));
         els.morePlaylistVideosBtn.addEventListener('click', () => renderPlaylistVideos({ reset: false }));
-        els.searchBtn.addEventListener('click', searchInChannel);
+        
+        els.searchBtn.addEventListener('click', () => searchInChannel());
         els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInChannel(); });
+        els.sortButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.current.searchOrder = btn.dataset.sort;
+                searchInChannel();
+            });
+        });
     };
 
     // ===== APP INITIALIZATION =====
