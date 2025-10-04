@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist</title>
+  <title>YouTube Whitelist V3</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
   <style>
     :root{
       --bg:#0f0f0f; --card:#1a1a1a; --muted:#b8b8b8; --text:#fff;
@@ -16,7 +21,6 @@
     .topbar{max-width:1200px;margin:0 auto;padding:.6rem .75rem;display:flex;gap:.5rem;align-items:center}
     .btn{border:none;background:#252525;color:#eee;border:1px solid #2f2f2f;padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem;}
     .btn.active{background:var(--accent);border-color:transparent;color:#fff}
-    .pill{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .7rem;border-radius:999px;background:#1c1c1c;border:1px solid #2a2a2a;color:#eee}
     main{max-width:1200px;margin:0 auto;padding:12px}
     .section{margin-top:14px}
     .section h2{font-size:1.05rem;margin:.25rem 4px}
@@ -32,13 +36,14 @@
     .video-card{background:var(--card);border:1px solid #262626;border-radius:calc(var(--radius) + 2px);overflow:hidden;box-shadow:var(--shadow); cursor:pointer;}
     .thumb{position:relative;aspect-ratio:16/9;background:#222}
     .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .progress-bar-container{position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.2)}
+    .progress-bar{height:100%;width:0%;background:var(--accent)}
     .chip{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border-radius:4px;padding:.2rem .5rem;font-size:.75rem}
     .card-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
     .title{font-weight:700;font-size:.98rem;line-height:1.25}
     .meta{color:var(--muted);font-size:.85rem}
     .tabs{display:flex;gap:8px;margin:8px 4px}
     .tab{padding:.5rem .8rem;border-radius:999px;background:#1d1d1d;border:1px solid #2a2a2a;cursor:pointer}
-    .tab.active{background:var(--accent);border-color:transparent;color:#fff}
     .searchbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px;background:#121212;border:1px solid #262626;border-radius:var(--radius);margin:6px 4px}
     .searchbar .input-wrapper{flex:1;display:flex;min-width:200px}
     .searchbar input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:1rem}
@@ -55,7 +60,7 @@
     .modal{width:95%;max-width:960px;max-height:95%;margin:auto;background:#0b0b0b;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
     .modal-header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #1f1f1f}
     .modal-body{overflow-y:auto;padding:10px}
-    .modal iframe{width:100%;aspect-ratio:16/9;border:0;margin-bottom:10px}
+    .modal-iframe-container{width:100%;aspect-ratio:16/9;border:0;margin-bottom:10px; background-color: #000;}
     .suggest{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
     .suggest .video-card{min-width:220px;}
     #playlistView .pl-head{display:flex;align-items:center;gap:8px;margin:6px 4px}
@@ -73,7 +78,6 @@
     <button class="btn" id="backBtn">← Zurück</button>
     <button class="btn" id="homeBtn">Home</button>
     <button class="btn" id="forwardBtn">Weiter →</button>
-    <div style="margin-left:auto; display: none;" class="pill" id="activeChannelPill"></div>
   </div>
 </header>
 
@@ -134,7 +138,7 @@
       <button class="btn" id="playerClose">Schließen</button>
     </div>
     <div class="modal-body">
-      <iframe id="playerIframe" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      <div id="player-mount" class="modal-iframe-container"></div>
       <div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px;">
           <strong>Vorgeschlagene Videos</strong>
@@ -147,22 +151,44 @@
 </div>
 
 <script>
+// ===== YOUTUBE IFRAME API =====
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+function onYouTubeIframeAPIReady() {
+    window.dispatchEvent(new Event('youtube-api-ready'));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // ===== CONFIG =====
-    const API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w"; 
+    const YOUTUBE_API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w"; 
+    const firebaseConfig = {
+      apiKey: "AIzaSyCWI6Z0Z9NXmbYkoK9ersdKj2dbI0tSHa4",
+      authDomain: "whitelist-v3.firebaseapp.com",
+      projectId: "whitelist-v3",
+      storageBucket: "whitelist-v3.firebasestorage.app",
+      messagingSenderId: "747410045455",
+      appId: "1:747410045455:web:805ede68f0aefffae1417a"
+    };
     
     const ALLOWED_CHANNELS = [
         "@jpperformance", "@MotorenZimmer", "@veritasium",
-        "@3blue1brown", "@RealEngineering", "@Autodoktoren"
+        "@3blue1brown", "@RealEngineering", "@Autodoktoren",
+        "@MrWissen2go", "@BreakingLab" // Hinzugefügte Kanäle
     ];
 
     // ===== STATE & ELEMENTS =====
     const state = {
+        userId: null,
+        progressData: new Map(),
         channels: new Map(), 
         current: { 
             channelId: null, tab: 'videos', videosPageToken: null, 
             playlistsPageToken: null, playlistVideosPageToken: null,
-            searchQuery: null, searchOrder: 'date' 
+            searchQuery: null, searchOrder: 'date',
+            player: null, playerStateInterval: null
         },
         lastChannelRoute: null, playlistContext: { playlistId: null, channelId: null, title: null }
     };
@@ -177,15 +203,20 @@ document.addEventListener('DOMContentLoaded', () => {
         channelBannerContainer: document.getElementById('channelBannerContainer'),
         channelBannerBackground: document.getElementById('channelBannerBackground'),
         channelBanner: document.getElementById('channelBanner'),
-        channelMeta: document.getElementById('channelMeta'), activeChannelPill: document.getElementById('activeChannelPill'),
+        channelMeta: document.getElementById('channelMeta'),
         overlay: document.getElementById('playerOverlay'), playerClose: document.getElementById('playerClose'),
-        playerIframe: document.getElementById('playerIframe'), playerTitle: document.getElementById('playerTitle'),
+        playerMount: document.getElementById('player-mount'), playerTitle: document.getElementById('playerTitle'),
         suggestList: document.getElementById('suggestList'), suggestSub: document.getElementById('suggestSub'),
         playlistTitle: document.getElementById('playlistTitle'), playlistVideos: document.getElementById('playlistVideos'),
         morePlaylistVideosBtn: document.getElementById('morePlaylistVideosBtn'), backBtn: document.getElementById('backBtn'),
         homeBtn: document.getElementById('homeBtn'), forwardBtn: document.getElementById('forwardBtn'),
         backToChannelBtn: document.getElementById('backToChannelBtn'),
     };
+    
+    // ===== FIREBASE SETUP =====
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
     // ===== UTILS & HELPERS =====
     const showStatus = (message, isError = false) => { els.statusBox.textContent = message; els.statusBox.className = isError ? 'error' : 'loading'; };
@@ -205,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const api = async (path, params = {}) => {
         const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
-        params.key = API_KEY; 
+        params.key = YOUTUBE_API_KEY; 
         Object.entries(params).forEach(([k, v]) => v && url.searchParams.set(k, v));
         const res = await fetch(url);
         if (!res.ok) {
@@ -227,8 +258,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const videoCard = (v, context = {}) => {
         const card = createEl('div', 'video-card');
-        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${v.thumb || ''}" alt="">${v.date ? `<span class="chip">${fmtDate(v.date)}</span>` : ''}</div><div class="card-body"><div class="title">${v.title || '?'}</div><div class="meta">${v.channelTitle || 'Video'}</div></div>`;
-        card.addEventListener('click', () => openPlayer(v.videoId, v.title, context)); return card;
+        const progress = state.progressData.get(v.videoId);
+        let progressPercent = 0;
+        if (progress && progress.duration > 0) {
+            progressPercent = Math.min((progress.currentTime / progress.duration) * 100, 100);
+        }
+
+        card.innerHTML = `
+            <div class="thumb">
+                <img loading="lazy" src="${v.thumb || ''}" alt="">
+                ${v.date ? `<span class="chip">${fmtDate(v.date)}</span>` : ''}
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${progressPercent}%"></div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="title">${v.title || '?'}</div>
+                <div class="meta">${v.channelTitle || 'Video'}</div>
+            </div>`;
+        card.addEventListener('click', () => openPlayer(v.videoId, v.title, context)); 
+        return card;
     };
     const playlistCard = (p) => {
         const card = createEl('div', 'video-card');
@@ -236,7 +285,27 @@ document.addEventListener('DOMContentLoaded', () => {
         card.addEventListener('click', () => openPlaylist(p.playlistId, p.channelId, p.title)); return card;
     };
 
-    // ===== DATA FETCHING & DISPLAY LOGIC =====
+    // ===== DATA FETCHING & DATABASE =====
+    const saveProgress = (videoId, currentTime, duration) => {
+        if (!state.userId || !videoId || !isFinite(currentTime) || !isFinite(duration)) return;
+        const progressRef = db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId);
+        const data = { 
+            currentTime: Math.round(currentTime), 
+            duration: Math.round(duration), 
+            lastWatched: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        progressRef.set(data, { merge: true });
+        state.progressData.set(videoId, data);
+    };
+
+    const fetchAllProgress = async () => {
+        if (!state.userId) return;
+        const progressSnap = await db.collection('users').doc(state.userId).collection('videoProgress').get();
+        progressSnap.forEach(doc => {
+            state.progressData.set(doc.id, doc.data());
+        });
+    };
+    
     const getChannelInfo = async (identifier) => {
         if (state.channels.has(identifier) && state.channels.get(identifier).banner) {
              return state.channels.get(identifier);
@@ -273,10 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return info;
     };
     
-    const filterShortsByDuration = async (items, idKey = 'videoId') => {
+    const filterVideosByDuration = async (items, idKey = 'videoId') => {
         if (!items || items.length === 0) return [];
         
-        // Helper function to get the video ID from different item structures
         const getVideoId = (item, key) => {
             if (key === 'contentDetails') return item.contentDetails?.videoId;
             if (key === 'id') return item.id?.videoId;
@@ -323,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .flatMap(r => r.value.items.map(item => ({...item, channelTitle: r.value.channelTitle })))
                 .filter(it => it.contentDetails && it.contentDetails.videoId);
 
-            const nonShorts = await filterShortsByDuration(allItems, 'contentDetails');
+            const nonShorts = await filterVideosByDuration(allItems, 'contentDetails');
 
             const latestVideos = successfulChannels.map(info => {
                 return nonShorts.find(v => v.snippet.channelId === info.id);
@@ -375,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let items = (data.items || []).filter(it => it.snippet.thumbnails);
             if (isVideos) {
-                items = await filterShortsByDuration(items, 'contentDetails');
+                items = await filterVideosByDuration(items, 'contentDetails');
             }
 
             items.forEach(it => {
@@ -434,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const info = await getChannelInfo(state.current.channelId);
             
             let items = (data.items || []).filter(it => it.snippet.thumbnails);
-            items = await filterVideosByDuration(items, 'id');
+            items = await filterVideosByDuration(items, 'id'); // Corrected to use 'id' for search results
 
             items.forEach(it => {
                 tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title }, { channelId: state.current.channelId }));
@@ -459,39 +527,53 @@ document.addEventListener('DOMContentLoaded', () => {
         else if(state.current.channelId) navigate(`channel/${state.current.channelId}/playlists`);
         else navigate('home');
     };
-    const openPlayer = async (videoId, title, context) => {
+    const openPlayer = (videoId, title, context) => {
         els.playerTitle.textContent = title || 'Video';
-        els.playerIframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&autoplay=1`;
         els.overlay.classList.add('show');
-        els.suggestList.innerHTML = '';
-        try {
-            let items = [];
-            const currentChannelId = context?.channelId || state.current.channelId;
-            const info = await getChannelInfo(currentChannelId);
-            if (context?.playlistId) {
-                const data = await api('playlistItems', { playlistId: context.playlistId, maxResults: 15, part: 'snippet,contentDetails' });
-                items = data.items || [];
-            } else if (currentChannelId) {
-                const data = await api('playlistItems', { playlistId: info.uploadsId, maxResults: 15, part: 'snippet,contentDetails' });
-                items = data.items;
-            }
+        
+        const progress = state.progressData.get(videoId);
+        const startSeconds = progress ? progress.currentTime : 0;
 
-            const nonShorts = await filterVideosByDuration(items || [], 'contentDetails');
-            nonShorts
-                .filter(it => it.contentDetails.videoId !== videoId)
-                .forEach(it => {
-                    els.suggestList.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }, { channelId: currentChannelId }));
-                });
-        } catch(e) { console.warn("Could not load suggestions", e); }
+        state.current.player = new YT.Player('player-mount', {
+            height: '100%', width: '100%', videoId: videoId,
+            playerVars: { 'playsinline': 1, 'autoplay': 1, 'rel': 0, 'start': startSeconds },
+            events: { 'onStateChange': onPlayerStateChange }
+        });
     };
-    const closePlayer = () => { els.overlay.classList.remove('show'); els.playerIframe.src = 'about:blank'; };
+    
+    const onPlayerStateChange = (event) => {
+        const player = event.target;
+        const videoId = player.getVideoData().video_id;
+
+        if (event.data == YT.PlayerState.PLAYING) {
+            clearInterval(state.current.playerStateInterval);
+            state.current.playerStateInterval = setInterval(() => {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                if (currentTime > 0 && duration > 0) {
+                    saveProgress(videoId, currentTime, duration);
+                }
+            }, 5000);
+        } else {
+            clearInterval(state.current.playerStateInterval);
+        }
+    };
+
+    const closePlayer = () => {
+        clearInterval(state.current.playerStateInterval);
+        if (state.current.player && typeof state.current.player.destroy === 'function') {
+            state.current.player.destroy();
+        }
+        state.current.player = null;
+        handleRoute(); // Refresh view to update progress bars
+        els.overlay.classList.remove('show');
+    };
     const openPlaylist = (playlistId, channelId, title) => {
         state.lastChannelRoute = `channel/${channelId}/playlists`;
         navigate(`playlist/${playlistId}:${channelId}/${encodeURIComponent(title || '')}`);
     };
     
     const handleRoute = async () => {
-        els.activeChannelPill.style.display = 'none'; 
         const r = parseRoute();
         hideStatus();
         try {
@@ -507,8 +589,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(t.dataset.tab === state.current.tab) t.classList.add('active');
                 });
                 const info = await getChannelInfo(r.id);
-                els.activeChannelPill.textContent = info.title; 
-                els.activeChannelPill.style.display = 'inline-flex'; 
                 els.channelMeta.textContent = info.title;
 
                 if (info.banner) {
@@ -525,8 +605,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.playlistContext = { playlistId, channelId, title: r.title || 'Playlist' };
                 els.playlistTitle.textContent = state.playlistContext.title;
                 const info = await getChannelInfo(channelId);
-                els.activeChannelPill.textContent = info.title; 
-                els.activeChannelPill.style.display = 'inline-flex';
                 await renderPlaylistVideos({ reset: true });
             }
         } catch (e) {
@@ -538,9 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== EVENT LISTENERS =====
     const setupEventListeners = () => {
         window.addEventListener('hashchange', handleRoute);
-        els.homeBtn.addEventListener('click', () => {
-            navigate('home');
-        });
+        els.homeBtn.addEventListener('click', () => navigate('home'));
         els.backBtn.addEventListener('click', () => history.back());
         els.forwardBtn.addEventListener('click', () => history.forward());
         els.backToChannelBtn.addEventListener('click', backToChannel);
@@ -568,17 +644,28 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ===== APP INITIALIZATION =====
-    const init = async () => {
-        try {
-            setupEventListeners();
-            await handleRoute();
-        } catch (e) {
-            console.error("KRITISCHER FEHLER BEIM START:", e);
-            showStatus(`Ein kritischer Fehler ist aufgetreten: ${e.message}`, true);
-        }
+    const initAppLogic = async () => {
+        await fetchAllProgress();
+        setupEventListeners();
+        await handleRoute();
     };
     
-    init();
+    const initAuth = () => {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                state.userId = user.uid;
+                initAppLogic();
+            } else {
+                auth.signInAnonymously().catch(error => {
+                    console.error("Anonymous sign in failed:", error);
+                    showStatus("Anmeldung für Fortschritt-Speicherung fehlgeschlagen.", true);
+                    initAppLogic(); // App trotzdem starten
+                });
+            }
+        });
+    };
+    
+    window.addEventListener('youtube-api-ready', initAuth);
 });
 </script>
 
