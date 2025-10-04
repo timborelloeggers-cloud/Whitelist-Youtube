@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ALLOWED_CHANNELS = [
         "@jpperformance", "@MotorenZimmer", "@veritasium",
         "@3blue1brown", "@RealEngineering", "@Autodoktoren",
-        "@MrWissen2go", "@BreakingLab" // Hinzugefügte Kanäle
+        "@MrWissen2go", "@BreakingLab", "@automotorundsport" // Geänderter Kanal
     ];
 
     // ===== STATE & ELEMENTS =====
@@ -361,10 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
             durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration));
         });
         
-        return items.filter(it => {
-            const videoId = getVideoId(it, idKey);
-            return durationMap.get(videoId) > 120;
-        });
+        return items.filter(it => durationMap.get(videoId) > 120);
     };
 
     const buildHome = async () => {
@@ -604,7 +601,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const [playlistId, channelId] = r.id.split(':');
                 state.playlistContext = { playlistId, channelId, title: r.title || 'Playlist' };
                 els.playlistTitle.textContent = state.playlistContext.title;
-                const info = await getChannelInfo(channelId);
                 await renderPlaylistVideos({ reset: true });
             }
         } catch (e) {
