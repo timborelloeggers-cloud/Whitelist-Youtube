@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ALLOWED_CHANNELS = [
         "@jpperformance", "@MotorenZimmer", "@veritasium",
         "@3blue1brown", "@RealEngineering", "@Autodoktoren",
-        "@MrWissen2go", "@BreakingLab", "@automotorundsport" // Geänderter Kanal
+        "@MrWissen2go", "@BreakingLab", "@automotorundsport"
     ];
 
     // ===== STATE & ELEMENTS =====
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return info;
     };
     
-    const filterVideosByDuration = async (items, idKey = 'videoId') => {
+    const filterVideosByDuration = async (items, idKey) => {
         if (!items || items.length === 0) return [];
         
         const getVideoId = (item, key) => {
@@ -361,7 +361,10 @@ document.addEventListener('DOMContentLoaded', () => {
             durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration));
         });
         
-        return items.filter(it => durationMap.get(videoId) > 120);
+        return items.filter(it => {
+            const videoId = getVideoId(it, idKey);
+            return durationMap.get(videoId) > 120;
+        });
     };
 
     const buildHome = async () => {
@@ -499,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const info = await getChannelInfo(state.current.channelId);
             
             let items = (data.items || []).filter(it => it.snippet.thumbnails);
-            items = await filterVideosByDuration(items, 'id'); // Corrected to use 'id' for search results
+            items = await filterVideosByDuration(items, 'id');
 
             items.forEach(it => {
                 tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title }, { channelId: state.current.channelId }));
@@ -562,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.current.player.destroy();
         }
         state.current.player = null;
-        handleRoute(); // Refresh view to update progress bars
+        handleRoute();
         els.overlay.classList.remove('show');
     };
     const openPlaylist = (playlistId, channelId, title) => {
