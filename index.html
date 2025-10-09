@@ -3,11 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V4</title>
-  
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+  <title>YouTube Whitelist V3</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -78,9 +74,9 @@
 
 <header>
   <div class="topbar">
-    <button class="btn" id="backBtn">← Zurück</button>
+    <button class="btn" id="backBtn">←</button>
     <button class="btn" id="homeBtn">Home</button>
-    <button class="btn" id="forwardBtn">Weiter →</button>
+    <button class="btn" id="forwardBtn">→</button>
     <div style="margin-left:auto;">
       <button class="btn" id="authBtn">Anmelden</button>
     </div>
@@ -166,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== CONFIG =====
     const YOUTUBE_API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w"; 
     const firebaseConfig = {
-      apiKey: "AIzaSyCWI6Z0Z9NXmbYkoK9ersdKj2dbI0tSHa4", // KORRIGIERTER KEY
+      apiKey: "AIzaSyCWI6Z0Z9NXmbYkoK9ersdKj2dbI0tSHa4",
       authDomain: "whitelist-v3.firebaseapp.com",
       projectId: "whitelist-v3",
       storageBucket: "whitelist-v3.firebasestorage.app",
