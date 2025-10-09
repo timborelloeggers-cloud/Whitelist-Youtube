@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V3</title>
+  <title>YouTube Whitelist V4</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -19,7 +19,7 @@
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
     header{position:sticky;top:0;z-index:100;backdrop-filter:saturate(140%) blur(6px);background:rgba(10,10,10,.75);border-bottom:1px solid rgba(255,255,255,.06)}
     .topbar{max-width:1200px;margin:0 auto;padding:.6rem .75rem;display:flex;gap:.5rem;align-items:center}
-    .btn{border:none;background:#252525;color:#eee;border:1px solid #2f2f2f;padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem;}
+    .btn{border:none;background:#252525;color:#eee;border:1px solid #2f2f2f;padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem; white-space: nowrap;}
     .btn.active{background:var(--accent);border-color:transparent;color:#fff}
     main{max-width:1200px;margin:0 auto;padding:12px}
     .section{margin-top:14px}
@@ -52,7 +52,7 @@
     #channelBannerContainer{position: relative;width: 100%;min-height: 120px;border-radius: calc(var(--radius) - 4px);margin-bottom: 12px;overflow: hidden;background-color: #222;display: flex;align-items: center;justify-content: center;}
     #channelBannerBackground{position: absolute;inset: 0;background-size: cover;background-position: center center;filter: blur(8px) brightness(0.6);transform: scale(1.05);}
     #channelBanner{position: relative;max-width: 60%;max-height: 100px;aspect-ratio: 4/1;background-size: contain;background-repeat: no-repeat;background-position: center center;border-radius: var(--radius);box-shadow: var(--shadow);background-color: rgba(0,0,0,0.3);}
-    @media (max-width: 768px) { #channelBanner{ max-width: 80%; } }
+    @media (max-width: 768px) { #channelBanner{ max-width: 80%; } .topbar .btn { padding: .4rem .6rem; font-size: .8rem; } }
     .loadmore{display:block;width:100%;margin:14px 0;background:#1b1b1b;color:#eee;border:1px solid #2a2a2a;border-radius:999px;padding:.6rem;cursor:pointer}
     .hidden{display:none!important}
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
@@ -171,15 +171,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const ALLOWED_CHANNELS = [
+        { handle: "@100SekundenPhysik", favorite: false },
+        { handle: "@automotorundsport", favorite: false },
+        { handle: "@Autodoktoren", favorite: true },
+        { handle: "@BreakingLab", favorite: true },
+        { handle: "@EngineeringExplained", favorite: false },
+        { handle: "@GRIPRTL2", favorite: false },
+        { handle: "@Halle77", favorite: true },
         { handle: "@jpperformance", favorite: true },
-        // { handle: "@automotorundsport", favorite: true },
-        // { handle: "@Autodoktoren", favorite: true },
-        // { handle: "@BreakingLab", favorite: false },
-        // { handle: "@3blue1brown", favorite: false },
-        // { handle: "@MotorenZimmer", favorite: true },
-        // { handle: "@MrWissen2go", favorite: false },
-        // { handle: "@RealEngineering", favorite: false },
-        // { handle: "@veritasium", favorite: false }
+        { handle: "@MotorenZimmer", favorite: false },
+        { handle: "@MrWissen2go", favorite: false },
+        { handle: "@schrauber_tv", favorite: false },
+        { handle: "@Simplicissimus", favorite: false },
+        { handle: "@TerraXLeschundCo", favorite: false },
+        { handle: "@TheEfficientEngineer", favorite: false },
+        { handle: "@ThisOldTony", favorite: false },
+        { handle: "@veritasium", favorite: true },
     ];
 
     // ===== STATE & ELEMENTS =====
@@ -187,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userId: null,
         progressData: new Map(),
         channels: new Map(), 
+        homePageCache: { data: null, timestamp: 0 },
         current: { 
             channelId: null, tab: 'videos', videosPageToken: null, 
             playlistsPageToken: null, playlistVideosPageToken: null,
@@ -396,7 +404,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const buildHome = async () => {
-        showStatus('Lade Kanäle und neueste Videos...');
         els.channelGridFavorites.innerHTML = ''; els.channelGridRest.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
         
         const infoPromises = ALLOWED_CHANNELS.map(ch => getChannelInfo(ch));
