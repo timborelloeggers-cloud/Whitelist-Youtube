@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== CONFIG =====
     const YOUTUBE_API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w"; 
     const firebaseConfig = {
-      apiKey: "AIzaSyCWI6Z0Z9NXmbYkoK9ersdKj2dbI_tSHa4",
+      apiKey: "AIzaSyCWI6Z0Z9NXmbYkoK9ersdKj2dbI0tSHa4", // KORRIGIERTER KEY
       authDomain: "whitelist-v3.firebaseapp.com",
       projectId: "whitelist-v3",
       storageBucket: "whitelist-v3.firebasestorage.app",
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const addDurationsToVideos = async (items, idKey) => {
-        if (!items || items.length === 0) return [];
+        if (!items || items.length === 0) return items;
         const getVideoId = (item, key) => (key === 'contentDetails') ? item.contentDetails?.videoId : item.id?.videoId;
         const videoIds = items.map(it => getVideoId(it, idKey)).filter(Boolean).join(',');
         if (!videoIds) return items;
