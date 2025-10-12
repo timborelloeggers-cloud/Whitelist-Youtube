@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         channelBanner: document.getElementById('channelBanner'),
         channelMeta: document.getElementById('channelMeta'),
         authBtn: document.getElementById('authBtn'),
-        overlay: document.getElementById('playerOverlay'),
+  _overlay: document.getElementById('playerOverlay'),
         playerClose: document.getElementById('playerClose'),
         playerMount: document.getElementById('player-mount'),
         playerTitle: document.getElementById('playerTitle'),
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return res.json();
     };
 
-    // ===== NEU: CACHING HELPER =====
+    // Caching-Helfer zur Reduzierung von API-Aufrufen
     const cachedApi = async (key, expiryMinutes, apiCallFn) => {
         const cacheKey = `yt_cache_${key}`;
         try {
@@ -382,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    // ===== MODIFIZIERT: Nutzt jetzt Caching =====
     const getChannelInfo = async (identifier) => {
         const handle = typeof identifier === 'object' ? identifier.handle : identifier;
         if (state.channels.has(handle) && state.channels.get(handle).banner) {
@@ -426,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    // ===== KORRIGIERT: Behebt den 400 invalidFilters Fehler =====
+    // Korrigierte Funktion, die den 400 invalidFilters Fehler behebt
     const addDurationsToVideos = async (items, idKey) => {
         if (!items || items.length === 0) return items;
         const getVideoId = (item, key) => (key === 'contentDetails') ? item.contentDetails?.videoId : item.id?.videoId;
@@ -447,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 } catch (e) {
                     console.error(`Fehler beim Laden der Video-Metadaten für Chunk: ${videoIds}`, e);
-                }
+              _ }
             }
         }
 
@@ -478,8 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (successfulChannels.length > 0) {
-            // ===== MODIFIZIERT: Nutzt jetzt Caching =====
-            // Cache für 60 Minuten
+            // Videos werden für 60 Minuten gecached
             const videoPromises = successfulChannels.map(info =>
                 cachedApi(`latest_videos_${info.id}`, 60, () =>
                     api('playlistItems', { playlistId: info.uploadsId, maxResults: 10, part: 'snippet,contentDetails' })
@@ -544,8 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const info = await getChannelInfo(state.current.channelId);
             
-            // ===== MODIFIZIERT: Nutzt jetzt Caching =====
-            const pageToken = state.current[pageTokenKey] || 'start'; // 'start' for first page
+            const pageToken = state.current[pageTokenKey] || 'start'; // 'start' für die erste Seite
             let data = isVideos 
                 ? await cachedApi(`channel_videos_${info.id}_${pageToken}`, 60, () => 
                     api('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey], part: 'snippet,contentDetails' }))
@@ -579,7 +576,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const info = await getChannelInfo(state.playlistContext.channelId);
 
-            // ===== MODIFIZIERT: Nutzt jetzt Caching =====
             const pageToken = state.current.playlistVideosPageToken || 'start';
             const data = await cachedApi(`playlist_${state.playlistContext.playlistId}_${pageToken}`, 60, () =>
                 api('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet,contentDetails' })
@@ -718,7 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (info.banner) {
                     els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
-                    els.channelBanner.style.backgroundImage = `url(${info.banner})`;
+          _         els.channelBanner.style.backgroundImage = `url(${info.banner})`;
                     els.channelBannerContainer.classList.remove('hidden');
                 } else {
                     els.channelBannerContainer.classList.add('hidden');
