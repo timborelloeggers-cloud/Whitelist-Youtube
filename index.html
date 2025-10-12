@@ -1,154 +1,154 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V4</title>
-  
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
-  
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>YouTube Whitelist V4 - Fixed & Optimized</title>
+  
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <style>
-    :root{
-      --bg:#0f0f0f; --card:#1a1a1a; --muted:#b8b8b8; --text:#fff;
-      --accent:#ff0033; --radius:18px; --shadow:0 10px 24px rgba(0,0,0,.35)
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
-    header{position:sticky;top:0;z-index:100;backdrop-filter:saturate(140%) blur(6px);background:rgba(10,10,10,.75);border-bottom:1px solid rgba(255,255,255,.06)}
-    .topbar{max-width:1200px;margin:0 auto;padding:.6rem .75rem;display:flex;gap:.5rem;align-items:center}
-    .btn{border:none;background:#252525;color:#eee;border:1px solid #2f2f2f;padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem; white-space: nowrap;}
-    .btn.active{background:var(--accent);border-color:transparent;color:#fff}
-    main{max-width:1200px;margin:0 auto;padding:12px}
-    .section{margin-top:14px}
-    .section h2{font-size:1.05rem;margin:.25rem 4px}
-    .sub{color:var(--muted);font-size:.9rem}
-    .grid{display:grid;gap:12px}
-    .grid.cols-channels{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
-    .grid.cols-vids{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-    .chan-card{background:var(--card);border:1px solid #262626;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);padding:12px;display:flex;gap:12px;align-items:center;cursor:pointer}
-    .chan-thumb{width:56px;height:56px;border-radius:999px;background:#2b2b2b;overflow:hidden;flex:0 0 auto}
-    .chan-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-    .chan-meta{display:flex;flex-direction:column;gap:2px}
-    .chan-title{font-weight:700}
-    .video-card{background:var(--card);border:1px solid #262626;border-radius:calc(var(--radius) + 2px);overflow:hidden;box-shadow:var(--shadow); cursor:pointer;}
-    .thumb{position:relative;aspect-ratio:16/9;background:#222}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-    .progress-bar-container{position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.2)}
-    .progress-bar{height:100%;width:0%;background:var(--accent)}
-    .chip{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border-radius:4px;padding:.2rem .5rem;font-size:.75rem}
-    .card-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
-    .title{font-weight:700;font-size:.98rem;line-height:1.25}
-    .meta{color:var(--muted);font-size:.85rem; display:flex; justify-content:space-between; align-items:center;}
-    .tabs{display:flex;gap:8px;margin:8px 4px}
-    .tab{padding:.5rem .8rem;border-radius:999px;background:#1d1d1d;border:1px solid #2a2a2a;cursor:pointer}
-    .searchbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px;background:#121212;border:1px solid #262626;border-radius:var(--radius);margin:6px 4px}
-    .searchbar .input-wrapper{flex:1;display:flex;min-width:200px}
-    .searchbar input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:1rem}
-    .sort-options{display:flex;gap:6px;width:100%;padding:4px 0 0 8px;}
-    .searchbar .btn, .sort-options .btn { padding:.35rem .7rem; font-size:.85rem; }
-    #channelBannerContainer{position: relative;width: 100%;min-height: 120px;border-radius: calc(var(--radius) - 4px);margin-bottom: 12px;overflow: hidden;background-color: #222;display: flex;align-items: center;justify-content: center;}
-    #channelBannerBackground{position: absolute;inset: 0;background-size: cover;background-position: center center;filter: blur(8px) brightness(0.6);transform: scale(1.05);}
-    #channelBanner{position: relative;max-width: 60%;max-height: 100px;aspect-ratio: 4/1;background-size: contain;background-repeat: no-repeat;background-position: center center;border-radius: var(--radius);box-shadow: var(--shadow);background-color: rgba(0,0,0,0.3);}
-    @media (max-width: 768px) { #channelBanner{ max-width: 80%; } .topbar .btn { padding: .4rem .6rem; font-size: .8rem; } }
-    .loadmore{display:block;width:100%;margin:14px 0;background:#1b1b1b;color:#eee;border:1px solid #2a2a2a;border-radius:999px;padding:.6rem;cursor:pointer}
-    .hidden{display:none!important}
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
-    .overlay.show{display:flex}
-    .modal{width:95%;max-width:960px;max-height:95%;margin:auto;background:#0b0b0b;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
-    .modal-header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #1f1f1f}
-    .modal-body{overflow-y:auto;padding:10px}
-    .modal-iframe-container{width:100%;aspect-ratio:16/9;border:0;margin-bottom:10px; background-color: #000;}
-    #playlistView .pl-head{display:flex;align-items:center;gap:8px;margin:6px 4px}
-    #playlistView .pl-title{font-weight:700}
-    .loading-msg, .error-msg{ text-align: center; padding: 20px; font-style: italic; color: var(--muted); }
-    #statusBox{ padding: 10px; margin: 12px; border-radius: 8px; text-align: center; }
-    #statusBox.error { background-color: #400; border: 1px solid #800; color: #f88; }
-    #statusBox.loading { background-color: #222; border: 1px solid #444; color: #aaa; }
-    .toggle-channels-btn { width: 100%; margin: 10px 0; }
-  </style>
+  <style>
+    :root{
+      --bg:#0f0f0f; --card:#1a1a1a; --muted:#b8b8b8; --text:#fff;
+      --accent:#ff0033; --radius:18px; --shadow:0 10px 24px rgba(0,0,0,.35)
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
+    header{position:sticky;top:0;z-index:100;backdrop-filter:saturate(140%) blur(6px);background:rgba(10,10,10,.75);border-bottom:1px solid rgba(255,255,255,.06)}
+    .topbar{max-width:1200px;margin:0 auto;padding:.6rem .75rem;display:flex;gap:.5rem;align-items:center}
+    .btn{border:none;background:#252525;color:#eee;border:1px solid #2f2f2f;padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem; white-space: nowrap;}
+    .btn.active{background:var(--accent);border-color:transparent;color:#fff}
+    main{max-width:1200px;margin:0 auto;padding:12px}
+    .section{margin-top:14px}
+    .section h2{font-size:1.05rem;margin:.25rem 4px}
+    .sub{color:var(--muted);font-size:.9rem}
+    .grid{display:grid;gap:12px}
+    .grid.cols-channels{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+    .grid.cols-vids{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+    .chan-card{background:var(--card);border:1px solid #262626;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);padding:12px;display:flex;gap:12px;align-items:center;cursor:pointer}
+    .chan-thumb{width:56px;height:56px;border-radius:999px;background:#2b2b2b;overflow:hidden;flex:0 0 auto}
+    .chan-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .chan-meta{display:flex;flex-direction:column;gap:2px}
+    .chan-title{font-weight:700}
+    .video-card{background:var(--card);border:1px solid #262626;border-radius:calc(var(--radius) + 2px);overflow:hidden;box-shadow:var(--shadow); cursor:pointer;}
+    .thumb{position:relative;aspect-ratio:16/9;background:#222}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .progress-bar-container{position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.2)}
+    .progress-bar{height:100%;width:0%;background:var(--accent)}
+    .chip{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border-radius:4px;padding:.2rem .5rem;font-size:.75rem}
+    .card-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+    .title{font-weight:700;font-size:.98rem;line-height:1.25}
+    .meta{color:var(--muted);font-size:.85rem; display:flex; justify-content:space-between; align-items:center;}
+    .tabs{display:flex;gap:8px;margin:8px 4px}
+    .tab{padding:.5rem .8rem;border-radius:999px;background:#1d1d1d;border:1px solid #2a2a2a;cursor:pointer}
+    .searchbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px;background:#121212;border:1px solid #262626;border-radius:var(--radius);margin:6px 4px}
+    .searchbar .input-wrapper{flex:1;display:flex;min-width:200px}
+    .searchbar input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:1rem}
+    .sort-options{display:flex;gap:6px;width:100%;padding:4px 0 0 8px;}
+    .searchbar .btn, .sort-options .btn { padding:.35rem .7rem; font-size:.85rem; }
+    #channelBannerContainer{position: relative;width: 100%;min-height: 120px;border-radius: calc(var(--radius) - 4px);margin-bottom: 12px;overflow: hidden;background-color: #222;display: flex;align-items: center;justify-content: center;}
+    #channelBannerBackground{position: absolute;inset: 0;background-size: cover;background-position: center center;filter: blur(8px) brightness(0.6);transform: scale(1.05);}
+    #channelBanner{position: relative;max-width: 60%;max-height: 100px;aspect-ratio: 4/1;background-size: contain;background-repeat: no-repeat;background-position: center center;border-radius: var(--radius);box-shadow: var(--shadow);background-color: rgba(0,0,0,0.3);}
+    @media (max-width: 768px) { #channelBanner{ max-width: 80%; } .topbar .btn { padding: .4rem .6rem; font-size: .8rem; } }
+    .loadmore{display:block;width:100%;margin:14px 0;background:#1b1b1b;color:#eee;border:1px solid #2a2a2a;border-radius:999px;padding:.6rem;cursor:pointer}
+    .hidden{display:none!important}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
+    .overlay.show{display:flex}
+    .modal{width:95%;max-width:960px;max-height:95%;margin:auto;background:#0b0b0b;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
+    .modal-header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #1f1f1f}
+    .modal-body{overflow-y:auto;padding:10px}
+    .modal-iframe-container{width:100%;aspect-ratio:16/9;border:0;margin-bottom:10px; background-color: #000;}
+    #playlistView .pl-head{display:flex;align-items:center;gap:8px;margin:6px 4px}
+    #playlistView .pl-title{font-weight:700}
+    .loading-msg, .error-msg{ text-align: center; padding: 20px; font-style: italic; color: var(--muted); }
+    #statusBox{ padding: 10px; margin: 12px; border-radius: 8px; text-align: center; }
+    #statusBox.error { background-color: #400; border: 1px solid #800; color: #f88; }
+    #statusBox.loading { background-color: #222; border: 1px solid #444; color: #aaa; }
+    .toggle-channels-btn { width: 100%; margin: 10px 0; }
+  </style>
 </head>
 <body>
 
 <header>
-  <div class="topbar">
-    <button class="btn" id="backBtn">←</button>
-    <button class="btn" id="homeBtn">Home</button>
-    <button class="btn" id="forwardBtn">→</button>
-    <div style="margin-left:auto;">
-      <button class="btn" id="authBtn">Anmelden</button>
-    </div>
-  </div>
+  <div class="topbar">
+    <button class="btn" id="backBtn">←</button>
+    <button class="btn" id="homeBtn">Home</button>
+    <button class="btn" id="forwardBtn">→</button>
+    <div style="margin-left:auto;">
+      <button class="btn" id="authBtn">Anmelden</button>
+    </div>
+  </div>
 </header>
 
 <main>
-  <div id="statusBox" class="hidden"></div>
+  <div id="statusBox" class="hidden"></div>
 
-  <section id="homeView" class="section">
-    <h2>Deine Kanäle</h2>
-    <div class="grid cols-channels" id="channelGridFavorites"></div>
-    <button class="btn toggle-channels-btn hidden" id="toggleChannelsBtn">Mehr anzeigen</button>
-    <div class="grid cols-channels hidden" id="channelGridRest"></div>
-    <div class="section">
-      <h2>Neueste Videos</h2>
-      <div class="grid cols-vids" id="latestVideosGrid"></div>
-    </div>
-  </section>
+  <section id="homeView" class="section">
+    <h2>Deine Kanäle</h2>
+    <div class="grid cols-channels" id="channelGridFavorites"></div>
+    <button class="btn toggle-channels-btn hidden" id="toggleChannelsBtn">Mehr anzeigen</button>
+    <div class="grid cols-channels hidden" id="channelGridRest"></div>
+    <div class="section">
+      <h2>Neueste Videos</h2>
+      <div class="grid cols-vids" id="latestVideosGrid"></div>
+    </div>
+  </section>
 
-  <section id="channelView" class="section hidden">
-    <div id="channelBannerContainer" class="hidden">
-        <div id="channelBannerBackground"></div>
-        <div id="channelBanner"></div>
-    </div>
-    <div class="searchbar">
-      <div class="input-wrapper">
-        <input id="searchInput" placeholder="Im Kanal suchen…"/>
-        <button class="btn" id="searchBtn">Suchen</button>
-      </div>
-      <div class="sort-options hidden" id="sortOptions">
-        <span class="sub">Sortieren:</span>
-        <button class="btn active" data-sort="date">Neueste</button>
-        <button class="btn" data-sort="relevance">Relevanz</button>
-        <button class="btn" data-sort="viewCount">Beliebt</button>
-      </div>
-    </div>
-    <div class="tabs">
-      <button class="tab" data-tab="videos">Videos</button>
-      <button class="tab" data-tab="playlists">Playlists</button>
-    </div>
-    <div id="channelMeta" class="sub" style="margin:6px 4px"></div>
-    <div id="videosTab" class="grid cols-vids"></div>
-    <button id="moreVideosBtn" class="loadmore hidden">Mehr Videos laden</button>
-    <div id="playlistsTab" class="grid cols-vids hidden"></div>
-    <button id="morePlaylistsBtn" class="loadmore hidden">Mehr Playlists laden</button>
-  </section>
+  <section id="channelView" class="section hidden">
+    <div id="channelBannerContainer" class="hidden">
+        <div id="channelBannerBackground"></div>
+        <div id="channelBanner"></div>
+    </div>
+    <div class="searchbar">
+      <div class="input-wrapper">
+        <input id="searchInput" placeholder="Im Kanal suchen…"/>
+        <button class="btn" id="searchBtn">Suchen</button>
+      </div>
+      <div class="sort-options hidden" id="sortOptions">
+        <span class="sub">Sortieren:</span>
+        <button class="btn active" data-sort="date">Neueste</button>
+        <button class="btn" data-sort="relevance">Relevanz</button>
+        <button class="btn" data-sort="viewCount">Beliebt</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab" data-tab="videos">Videos</button>
+      <button class="tab" data-tab="playlists">Playlists</button>
+    </div>
+    <div id="channelMeta" class="sub" style="margin:6px 4px"></div>
+    <div id="videosTab" class="grid cols-vids"></div>
+    <button id="moreVideosBtn" class="loadmore hidden">Mehr Videos laden</button>
+    <div id="playlistsTab" class="grid cols-vids hidden"></div>
+    <button id="morePlaylistsBtn" class="loadmore hidden">Mehr Playlists laden</button>
+  </section>
 
-  <section id="playlistView" class="section hidden">
-    <div class="pl-head">
-      <button class="btn" id="backToChannelBtn">← Zurück zum Kanal</button>
-      <div class="pl-title" id="playlistTitle">Playlist</div>
-    </div>
-    <div id="playlistVideos" class="grid cols-vids" style="margin-top: 14px;"></div>
-    <button id="morePlaylistVideosBtn" class="loadmore hidden">Mehr laden</button>
-  </section>
+  <section id="playlistView" class="section hidden">
+    <div class="pl-head">
+      <button class="btn" id="backToChannelBtn">← Zurück zum Kanal</button>
+      <div class="pl-title" id="playlistTitle">Playlist</div>
+    </div>
+    <div id="playlistVideos" class="grid cols-vids" style="margin-top: 14px;"></div>
+    <button id="morePlaylistVideosBtn" class="loadmore hidden">Mehr laden</button>
+  </section>
 </main>
 
 <div class="overlay" id="playerOverlay" role="dialog">
-  <div class="modal">
-    <div class="modal-header">
-      <strong id="playerTitle">Video</strong>
-      <button class="btn" id="playerClose">Schließen</button>
-    </div>
-    <div class="modal-body">
-      <div id="player-mount" class="modal-iframe-container"></div>
-    </div>
-  </div>
+  <div class="modal">
+    <div class="modal-header">
+      <strong id="playerTitle">Video</strong>
+      <button class="btn" id="playerClose">Schließen</button>
+    </div>
+    <div class="modal-body">
+      <div id="player-mount" class="modal-iframe-container"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -159,589 +159,655 @@ var firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 function onYouTubeIframeAPIReady() {
-    window.dispatchEvent(new Event('youtube-api-ready'));
+    window.dispatchEvent(new Event('youtube-api-ready'));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // ===== CONFIG =====
-    const YOUTUBE_API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w"; 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCWI6Z0Z9NXmbYkoK9ersdKj2dbI0tSHa4",
-      authDomain: "whitelist-v3.firebaseapp.com",
-      projectId: "whitelist-v3",
-      storageBucket: "whitelist-v3.firebasestorage.app",
-      messagingSenderId: "747410045455",
-      appId: "1:747410045455:web:805ede68f0aefffae1417a"
-    };
-    
-    const ALLOWED_CHANNELS = [
-        { handle: "@jpperformance", favorite: true },
-        { handle: "@automotorundsport", favorite: true },
-        { handle: "@Autodoktoren", favorite: true },
-        { handle: "@BreakingLab", favorite: false },
-        { handle: "@3blue1brown", favorite: false },
-        { handle: "@MotorenZimmer", favorite: true },
-        { handle: "@MrWissen2go", favorite: false },
-        { handle: "@RealEngineering", favorite: false },
-        { handle: "@veritasium", favorite: false },
-        { handle: "@100SekundenPhysik", favorite: false },
-        { handle: "@GRIPRTL2", favorite: false },
-        { handle: "@Halle77", favorite: true },
-        { handle: "@schrauber_tv", favorite: false },
-        { handle: "@Simplicissimus", favorite: false },
-        { handle: "@TerraXLeschundCo", favorite: false },
-        { handle: "@TheEfficientEngineer", favorite: false },
-        { handle: "@ThisOldTony", favorite: false },
-    ];
+    // ===== CONFIG =====
+    const YOUTUBE_API_KEY = "AIzaSyDdATTj976Ga3IRTFIqWbSYxORlp3mXT9w"; 
+    const firebaseConfig = {
+      apiKey: "AIzaSyCWI6Z0Z9NXmbYkoK9ersdKj2dbI0tSHa4",
+      authDomain: "whitelist-v3.firebaseapp.com",
+      projectId: "whitelist-v3",
+      storageBucket: "whitelist-v3.firebasestorage.app",
+      messagingSenderId: "747410045455",
+      appId: "1:747410045455:web:805ede68f0aefffae1417a"
+    };
+    
+    const ALLOWED_CHANNELS = [
+        { handle: "@jpperformance", favorite: true },
+        { handle: "@automotorundsport", favorite: true },
+        { handle: "@Autodoktoren", favorite: true },
+        { handle: "@BreakingLab", favorite: false },
+        { handle: "@3blue1brown", favorite: false },
+        { handle: "@MotorenZimmer", favorite: true },
+        { handle: "@MrWissen2go", favorite: false },
+        { handle: "@RealEngineering", favorite: false },
+        { handle: "@veritasium", favorite: false },
+        { handle: "@100SekundenPhysik", favorite: false },
+        { handle: "@GRIPRTL2", favorite: false },
+        { handle: "@Halle77", favorite: true },
+        { handle: "@schrauber_tv", favorite: false },
+        { handle: "@Simplicissimus", favorite: false },
+        { handle: "@TerraXLeschundCo", favorite: false },
+        { handle: "@TheEfficientEngineer", favorite: false },
+        { handle: "@ThisOldTony", favorite: false },
+    ];
 
-    // ===== STATE & ELEMENTS =====
-    const state = {
-        userId: null,
-        progressData: new Map(),
-        channels: new Map(), 
-        current: { 
-            channelId: null, tab: 'videos', videosPageToken: null, 
-            playlistsPageToken: null, playlistVideosPageToken: null,
-            searchQuery: null, searchOrder: 'date',
-            player: null, playerStateInterval: null
-        },
-        lastChannelRoute: null, playlistContext: { playlistId: null, channelId: null, title: null }
-    };
-    const els = {
-        statusBox: document.getElementById('statusBox'),
-        homeView: document.getElementById('homeView'),
-        channelView: document.getElementById('channelView'),
-        playlistView: document.getElementById('playlistView'),
-        channelGridFavorites: document.getElementById('channelGridFavorites'),
-        channelGridRest: document.getElementById('channelGridRest'),
-        toggleChannelsBtn: document.getElementById('toggleChannelsBtn'),
-        latestVideosGrid: document.getElementById('latestVideosGrid'),
-        tabs: document.querySelectorAll('.tab'),
-        videosTab: document.getElementById('videosTab'),
-        playlistsTab: document.getElementById('playlistsTab'),
-        moreVideosBtn: document.getElementById('moreVideosBtn'),
-        morePlaylistsBtn: document.getElementById('morePlaylistsBtn'),
-        searchInput: document.getElementById('searchInput'),
-        searchBtn: document.getElementById('searchBtn'),
-        sortOptions: document.getElementById('sortOptions'),
-        sortButtons: document.querySelectorAll('[data-sort]'),
-        channelBannerContainer: document.getElementById('channelBannerContainer'),
-        channelBannerBackground: document.getElementById('channelBannerBackground'),
-        channelBanner: document.getElementById('channelBanner'),
-        channelMeta: document.getElementById('channelMeta'),
-        authBtn: document.getElementById('authBtn'),
-        overlay: document.getElementById('playerOverlay'),
-        playerClose: document.getElementById('playerClose'),
-        playerMount: document.getElementById('player-mount'),
-        playerTitle: document.getElementById('playerTitle'),
-        playlistTitle: document.getElementById('playlistTitle'),
-        playlistVideos: document.getElementById('playlistVideos'),
-        morePlaylistVideosBtn: document.getElementById('morePlaylistVideosBtn'),
-        backBtn: document.getElementById('backBtn'),
-        homeBtn: document.getElementById('homeBtn'),
-        forwardBtn: document.getElementById('forwardBtn'),
-        backToChannelBtn: document.getElementById('backToChannelBtn'),
-    };
-    
-    // ===== FIREBASE SETUP =====
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
+    // ===== STATE & ELEMENTS =====
+    const state = {
+        userId: null,
+        progressData: new Map(),
+        channels: new Map(), 
+        current: { 
+            channelId: null, tab: 'videos', videosPageToken: null, 
+            playlistsPageToken: null, playlistVideosPageToken: null,
+            searchQuery: null, searchOrder: 'date',
+            player: null, playerStateInterval: null
+        },
+        lastChannelRoute: null, playlistContext: { playlistId: null, channelId: null, title: null }
+    };
+    const els = {
+        statusBox: document.getElementById('statusBox'),
+        homeView: document.getElementById('homeView'),
+        channelView: document.getElementById('channelView'),
+        playlistView: document.getElementById('playlistView'),
+        channelGridFavorites: document.getElementById('channelGridFavorites'),
+        channelGridRest: document.getElementById('channelGridRest'),
+        toggleChannelsBtn: document.getElementById('toggleChannelsBtn'),
+        latestVideosGrid: document.getElementById('latestVideosGrid'),
+        tabs: document.querySelectorAll('.tab'),
+        videosTab: document.getElementById('videosTab'),
+        playlistsTab: document.getElementById('playlistsTab'),
+        moreVideosBtn: document.getElementById('moreVideosBtn'),
+        morePlaylistsBtn: document.getElementById('morePlaylistsBtn'),
+        searchInput: document.getElementById('searchInput'),
+        searchBtn: document.getElementById('searchBtn'),
+        sortOptions: document.getElementById('sortOptions'),
+        sortButtons: document.querySelectorAll('[data-sort]'),
+        channelBannerContainer: document.getElementById('channelBannerContainer'),
+        channelBannerBackground: document.getElementById('channelBannerBackground'),
+        channelBanner: document.getElementById('channelBanner'),
+        channelMeta: document.getElementById('channelMeta'),
+        authBtn: document.getElementById('authBtn'),
+        overlay: document.getElementById('playerOverlay'),
+        playerClose: document.getElementById('playerClose'),
+        playerMount: document.getElementById('player-mount'),
+        playerTitle: document.getElementById('playerTitle'),
+        playlistTitle: document.getElementById('playlistTitle'),
+        playlistVideos: document.getElementById('playlistVideos'),
+        morePlaylistVideosBtn: document.getElementById('morePlaylistVideosBtn'),
+        backBtn: document.getElementById('backBtn'),
+        homeBtn: document.getElementById('homeBtn'),
+        forwardBtn: document.getElementById('forwardBtn'),
+        backToChannelBtn: document.getElementById('backToChannelBtn'),
+    };
+    
+    // ===== FIREBASE SETUP =====
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
 
-    // ===== UTILS & HELPERS =====
-    const showStatus = (message, isError = false) => { els.statusBox.textContent = message; els.statusBox.className = isError ? 'error' : 'loading'; };
-    const hideStatus = () => { els.statusBox.className = 'hidden'; };
-    const createEl = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
-    const fmtDate = s => new Date(s).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
-    
-    const parseISO8601Duration = (duration) => {
-        if (!duration) return 0;
-        const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-        if (!match) return 0;
-        const hours = (parseInt(match[1]) || 0);
-        const minutes = (parseInt(match[2]) || 0);
-        const seconds = (parseInt(match[3]) || 0);
-        return hours * 3600 + minutes * 60 + seconds;
-    };
-    
-    const formatDuration = (totalSeconds) => {
-        if (isNaN(totalSeconds) || totalSeconds < 0) return '';
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = Math.floor(totalSeconds % 60);
-        
-        if (hours > 0) {
-            return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        } else {
-            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-    };
+    // ===== UTILS & HELPERS =====
+    const showStatus = (message, isError = false) => { els.statusBox.textContent = message; els.statusBox.className = isError ? 'error' : 'loading'; };
+    const hideStatus = () => { els.statusBox.className = 'hidden'; };
+    const createEl = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
+    const fmtDate = s => new Date(s).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
+    
+    const parseISO8601Duration = (duration) => {
+        if (!duration) return 0;
+        const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+        if (!match) return 0;
+        const hours = (parseInt(match[1]) || 0);
+        const minutes = (parseInt(match[2]) || 0);
+        const seconds = (parseInt(match[3]) || 0);
+        return hours * 3600 + minutes * 60 + seconds;
+    };
+    
+    const formatDuration = (totalSeconds) => {
+        if (isNaN(totalSeconds) || totalSeconds < 0) return '';
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = Math.floor(totalSeconds % 60);
+        
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    };
 
-    const api = async (path, params = {}) => {
-        const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
-        params.key = YOUTUBE_API_KEY; 
-        Object.entries(params).forEach(([k, v]) => v && url.searchParams.set(k, v));
-        const res = await fetch(url);
-        if (!res.ok) {
-            const errorData = await res.json();
-            const reason = errorData.error?.errors?.[0]?.reason || 'unknownError';
-            console.error('API Error Response:', errorData);
-            let userMessage = `API Fehler (${res.status}): ${reason}.`;
-            if (reason === 'quotaExceeded') userMessage = 'Das tägliche API-Kontingent (Quota) wurde überschritten.';
-            throw new Error(userMessage);
-        }
-        return res.json();
-    };
-    
-    // ===== RENDERERS =====
-    const renderChannelCard = (info) => {
-        const card = createEl('div', 'chan-card');
-        card.innerHTML = `<div class="chan-thumb"><img src="${info.thumb}" alt=""></div><div class="chan-meta"><div class="chan-title">${info.title}</div><div class="sub">Kanal öffnen</div></div>`;
-        card.addEventListener('click', () => navigate(`channel/${info.id}/videos`)); return card;
-    };
-    const videoCard = (v, context = {}) => {
-        const card = createEl('div', 'video-card');
-        const progress = state.progressData.get(v.videoId);
-        let progressPercent = 0;
-        if (progress && progress.duration > 0) {
-            progressPercent = Math.min((progress.currentTime / progress.duration) * 100, 100);
-        }
+    const api = async (path, params = {}) => {
+        const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
+        params.key = YOUTUBE_API_KEY; 
+        Object.entries(params).forEach(([k, v]) => v && url.searchParams.set(k, v));
+        const res = await fetch(url);
+        if (!res.ok) {
+            const errorData = await res.json();
+            const reason = errorData.error?.errors?.[0]?.reason || 'unknownError';
+            console.error('API Error Response:', errorData);
+            let userMessage = `API Fehler (${res.status}): ${reason}.`;
+            if (reason === 'quotaExceeded') userMessage = 'Das tägliche API-Kontingent (Quota) wurde überschritten.';
+            throw new Error(userMessage);
+        }
+        return res.json();
+    };
 
-        card.innerHTML = `
-            <div class="thumb">
-                <img loading="lazy" src="${v.thumb || ''}" alt="">
-                ${v.date ? `<span class="chip">${fmtDate(v.date)}</span>` : ''}
-                <div class="progress-bar-container">
-                    <div class="progress-bar" style="width: ${progressPercent}%"></div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="title">${v.title || '?'}</div>
-                <div class="meta">
-                    <span>${v.channelTitle || 'Video'}</span>
-                    <span>${v.duration ? formatDuration(v.duration) : ''}</span>
-                </div>
-            </div>`;
-        card.addEventListener('click', () => openPlayer(v.videoId, v.title, context)); 
-        return card;
-    };
-    const playlistCard = (p) => {
-        const card = createEl('div', 'video-card');
-        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta">${p.channelTitle || 'Playlist'}</div></div>`;
-        card.addEventListener('click', () => openPlaylist(p.playlistId, p.channelId, p.title)); return card;
-    };
-
-    // ===== DATA FETCHING & DATABASE =====
-    const saveProgress = (videoId, currentTime, duration) => {
-        if (!state.userId || !videoId || !isFinite(currentTime) || !isFinite(duration)) return;
-        const progressRef = db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId);
-        const data = { 
-            currentTime: Math.round(currentTime), 
-            duration: Math.round(duration), 
-            lastWatched: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        progressRef.set(data, { merge: true });
-        state.progressData.set(videoId, data);
-    };
-
-    const fetchAllProgress = async () => {
-        if (!state.userId) return;
-        state.progressData.clear();
-        const progressSnap = await db.collection('users').doc(state.userId).collection('videoProgress').get();
-        progressSnap.forEach(doc => {
-            state.progressData.set(doc.id, doc.data());
-        });
-    };
-    
-    const getChannelInfo = async (identifier) => {
-        const handle = typeof identifier === 'object' ? identifier.handle : identifier;
-        if (state.channels.has(handle) && state.channels.get(handle).banner) {
-             return state.channels.get(handle);
-        }
-        let channelId = (typeof identifier === 'object') ? null : (identifier.startsWith('@') ? null : identifier);
-
-        if (!channelId) {
-            const searchData = await api('search', { q: handle, type: 'channel', part: 'snippet', maxResults: 1 });
-            const searchResult = searchData.items?.[0];
-            if (!searchResult) throw new Error(`Kanal-Handle '${handle}' nicht gefunden.`);
-            channelId = searchResult.snippet.channelId;
-        }
-        
-        const data = await api('channels', { id: channelId, part: 'snippet,contentDetails,brandingSettings' });
-        const c = data.items?.[0]; if (!c) throw new Error('Kanal-Info für ID: ' + channelId + ' nicht gefunden.');
-        
-        let banner = c.brandingSettings?.image?.bannerTvImageUrl 
-                     || c.brandingSettings?.image?.bannerTabletImageUrl
-                     || c.brandingSettings?.image?.bannerMobileImageUrl
-                     || c.brandingSettings?.image?.bannerExternalUrl;
-        
-        if (banner) {
-            banner = banner.replace(/=w\d+/, '=w2560');
-        }
-
-        const info = { 
-            id: c.id, 
-            title: c.snippet?.title || '?', 
-            thumb: c.snippet?.thumbnails?.default?.url, 
-            uploadsId: c.contentDetails?.relatedPlaylists?.uploads,
-            banner: banner
-        };
-        state.channels.set(handle, info);
-        state.channels.set(info.id, info);
-        return info;
-    };
-    
-    const addDurationsToVideos = async (items, idKey) => {
-        if (!items || items.length === 0) return items;
-        const getVideoId = (item, key) => (key === 'contentDetails') ? item.contentDetails?.videoId : item.id?.videoId;
-        const videoIds = items.map(it => getVideoId(it, idKey)).filter(Boolean).join(',');
-        if (!videoIds) return items;
-
-        const videoData = await api('videos', { id: videoIds, part: 'contentDetails' });
-        const durationMap = new Map();
-        videoData.items.forEach(v => {
-            durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration));
-        });
-
-        return items.map(it => ({ ...it, duration: durationMap.get(getVideoId(it, idKey)) }));
-    };
-
-    const buildHome = async () => {
-        showStatus('Lade Kanäle und neueste Videos...');
-        els.channelGridFavorites.innerHTML = ''; els.channelGridRest.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
-        
-        const infoPromises = ALLOWED_CHANNELS.map(ch => getChannelInfo(ch));
-        const infoResults = await Promise.allSettled(infoPromises);
-
-        const successfulChannels = [];
-        infoResults.forEach((result, i) => {
-            if (result.status === 'fulfilled' && result.value) {
-                const channelConfig = ALLOWED_CHANNELS[i];
-                const grid = channelConfig.favorite ? els.channelGridFavorites : els.channelGridRest;
-                grid.appendChild(renderChannelCard(result.value));
-                successfulChannels.push(result.value);
-            } else { console.error("Konnte Kanal-Info nicht laden:", result.reason); }
-        });
-
-        if (els.channelGridRest.children.length > 0) {
-            els.toggleChannelsBtn.classList.remove('hidden');
-        } else {
-            els.toggleChannelsBtn.classList.add('hidden');
-        }
-
-        if (successfulChannels.length > 0) {
-            const videoPromises = successfulChannels.map(info => api('playlistItems', { playlistId: info.uploadsId, maxResults: 10, part: 'snippet,contentDetails' }).then(data => ({...data, channelTitle: info.title })));
-            const videoResults = await Promise.allSettled(videoPromises);
-            
-            let allItems = videoResults
-                .filter(r => r.status === 'fulfilled' && r.value.items)
-                .flatMap(r => r.value.items.map(item => ({...item, channelTitle: r.value.channelTitle })))
-                .filter(it => it.contentDetails && it.contentDetails.videoId);
-            
-            allItems = await addDurationsToVideos(allItems, 'contentDetails');
-            
-            const latestVideos = successfulChannels.map(info => {
-                const unseenVideos = allItems.filter(v => {
-                    const progress = state.progressData.get(v.contentDetails.videoId);
-                    const hasDuration = typeof v.duration === 'number';
-                    return v.snippet.channelId === info.id && (!progress || !hasDuration || (progress.currentTime / v.duration) < 0.9);
-                });
-                const nonShorts = unseenVideos.filter(v => v.duration > 120);
-                return nonShorts[0];
-            }).filter(Boolean);
-
-            const allVideos = latestVideos.map(it => ({
-                    videoId: it.contentDetails.videoId, title: it.snippet.title,
-                    date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url,
-                    channelId: it.snippet.channelId, channelTitle: it.channelTitle, duration: it.duration
-                }));
-            
-            allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            if (allVideos.length === 0) {
-                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen, ungesehenen Videos gefunden.</div>`;
-            } else {
-                allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v, { channelId: v.channelId })));
-            }
-        } else {
-             els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Kanäle konnten geladen werden.</div>`;
-        }
-        hideStatus();
-    };
-    
-    const showChannelContent = async (type, { reset = true } = {}) => {
-        els.sortOptions.classList.add('hidden');
-        els.searchInput.value = '';
-        state.current.searchQuery = null;
-
-        const isVideos = type === 'videos';
-        const tabEl = isVideos ? els.videosTab : els.playlistsTab;
-        const otherTabEl = isVideos ? els.playlistsTab : els.videosTab;
-        const moreBtn = isVideos ? els.moreVideosBtn : els.morePlaylistsBtn;
-        
-        els.moreVideosBtn.classList.add('hidden');
-        els.morePlaylistsBtn.classList.add('hidden');
-
-        const pageTokenKey = isVideos ? 'videosPageToken' : 'playlistsPageToken';
-        if (reset) { tabEl.innerHTML = ''; state.current[pageTokenKey] = null; }
-        showStatus(`Lade ${type}...`, false);
-        tabEl.classList.remove('hidden'); otherTabEl.classList.add('hidden');
+    // ===== NEU: CACHING HELPER =====
+    const cachedApi = async (key, expiryMinutes, apiCallFn) => {
+        const cacheKey = `yt_cache_${key}`;
         try {
-            const info = await getChannelInfo(state.current.channelId);
-            let data = isVideos 
-                ? await api('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey], part: 'snippet,contentDetails' })
-                : await api('playlists', { channelId: state.current.channelId, pageToken: state.current[pageTokenKey], part: 'snippet' });
-            state.current[pageTokenKey] = data.nextPageToken || null;
-            if (reset) tabEl.innerHTML = '';
-
-            let items = (data.items || []).filter(it => it.snippet.thumbnails);
-            if (isVideos) {
-                items = await addDurationsToVideos(items, 'contentDetails');
-                items = items.filter(it => it.duration > 120);
-            }
-
-            items.forEach(it => {
-                if (isVideos) {
-                    tabEl.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, duration: it.duration }, { channelId: info.id }));
-                } else {
-                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
+            const cachedItem = localStorage.getItem(cacheKey);
+            if (cachedItem) {
+                const { timestamp, data } = JSON.parse(cachedItem);
+                const isExpired = (Date.now() - timestamp) > expiryMinutes * 60 * 1000;
+                if (!isExpired) {
+                    return data;
                 }
-            });
-            moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
-            hideStatus();
-        } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, true); }
-    };
-        
-    const renderPlaylistVideos = async ({ reset = true } = {}) => {
-        if (reset) { state.current.playlistVideosPageToken = null; els.playlistVideos.innerHTML = ''; }
-        showStatus('Lade Playlist-Inhalte...', false);
-        try {
-            const info = await getChannelInfo(state.playlistContext.channelId);
-            const data = await api('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet,contentDetails' });
-            state.current.playlistVideosPageToken = data.nextPageToken || null;
-            const playlistContext = { playlistId: state.playlistContext.playlistId, channelId: state.playlistContext.channelId };
-            
-            let items = await addDurationsToVideos(data.items || [], 'contentDetails');
-            items = items.filter(it => it.duration > 120);
-            
-            items.forEach(it => {
-                els.playlistVideos.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, duration: it.duration }, playlistContext));
-            });
-
-            els.morePlaylistVideosBtn.classList.toggle('hidden', !state.current.playlistVideosPageToken);
-            hideStatus();
-        } catch(e) { showStatus(`Fehler beim Laden der Playlist: ${e.message}`, true); }
-    };
-
-    const searchInChannel = async () => {
-        const q = els.searchInput.value.trim();
-        state.current.searchQuery = q;
-        if (!q) {
-            els.sortOptions.classList.add('hidden');
-            showChannelContent(state.current.tab, { reset: true });
-            return;
-        }
-
-        els.moreVideosBtn.classList.add('hidden');
-        els.morePlaylistsBtn.classList.add('hidden');
-        els.sortOptions.classList.remove('hidden');
-        els.sortButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
-        
-        const searchType = 'video';
-        const tabEl = els.videosTab;
-        
-        showStatus(`Suche nach "${q}"...`);
-        tabEl.innerHTML = '';
-        try {
-            const query = `"${q}"`;
-            const data = await api('search', { channelId: state.current.channelId, q: query, type: searchType, part: 'snippet', maxResults: 25, order: state.current.searchOrder });
-            const info = await getChannelInfo(state.current.channelId);
-            
-            let items = (data.items || []).filter(it => it.snippet.thumbnails);
-            items = await addDurationsToVideos(items, 'id');
-            items = items.filter(it => it.duration > 120);
-
-            items.forEach(it => {
-                tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, duration: it.duration }, { channelId: state.current.channelId }));
-            });
-            hideStatus();
-        } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
-    };
-
-    // ===== NAVIGATION & ROUTING =====
-    const navigate = (hash) => { window.location.hash = hash; };
-    const parseRoute = () => {
-        const h = window.location.hash.slice(1); if(!h) return {view: 'home'}; const parts = h.split('/');
-        return { view: parts[0], id: parts[1], tab: parts[2], title: parts[3] ? decodeURIComponent(parts[3]) : null };
-    };
-    const setView = (name) => {
-        els.homeView.classList.toggle('hidden', name !== 'home');
-        els.channelView.classList.toggle('hidden', name !== 'channel');
-        els.playlistView.classList.toggle('hidden', name !== 'playlist');
-    };
-    const backToChannel = () => {
-        if(state.lastChannelRoute) navigate(state.lastChannelRoute);
-        else if(state.current.channelId) navigate(`channel/${state.current.channelId}/playlists`);
-        else navigate('home');
-    };
-    const openPlayer = (videoId, title, context) => {
-        els.playerTitle.textContent = title || 'Video';
-        els.overlay.classList.add('show');
-        
-        const progress = state.progressData.get(videoId);
-        const startSeconds = progress ? progress.currentTime : 0;
-
-        state.current.player = new YT.Player('player-mount', {
-            height: '100%', width: '100%', videoId: videoId,
-            playerVars: { 'playsinline': 1, 'autoplay': 1, 'rel': 0, 'start': startSeconds },
-            events: { 'onStateChange': onPlayerStateChange }
-        });
-    };
-    
-    const onPlayerStateChange = (event) => {
-        const player = event.target;
-        const videoId = player.getVideoData().video_id;
-
-        if (event.data == YT.PlayerState.PLAYING) {
-            clearInterval(state.current.playerStateInterval);
-            state.current.playerStateInterval = setInterval(() => {
-                const currentTime = player.getCurrentTime();
-                const duration = player.getDuration();
-                if (currentTime > 0 && duration > 0) {
-                    saveProgress(videoId, currentTime, duration);
-                }
-            }, 5000);
-        } else {
-            clearInterval(state.current.playerStateInterval);
-        }
-    };
-
-    const closePlayer = () => {
-        clearInterval(state.current.playerStateInterval);
-        if (state.current.player && typeof state.current.player.destroy === 'function') {
-            state.current.player.destroy();
-        }
-        state.current.player = null;
-        handleRoute();
-        els.overlay.classList.remove('show');
-    };
-    const openPlaylist = (playlistId, channelId, title) => {
-        state.lastChannelRoute = `channel/${channelId}/playlists`;
-        navigate(`playlist/${playlistId}:${channelId}/${encodeURIComponent(title || '')}`);
-    };
-    
-    const handleRoute = async () => {
-        const r = parseRoute();
-        hideStatus();
-        try {
-            if (r.view === 'home' || !r.view) {
-                setView('home');
-                await buildHome();
-            } else if (r.view === 'channel' && r.id) {
-                setView('channel'); 
-                state.current.channelId = r.id; 
-                state.current.tab = r.tab || 'videos';
-                els.tabs.forEach(t => {
-                    t.classList.remove('active');
-                    if(t.dataset.tab === state.current.tab) t.classList.add('active');
-                });
-                const info = await getChannelInfo(r.id);
-                els.channelMeta.textContent = info.title;
-
-                if (info.banner) {
-                    els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
-                    els.channelBanner.style.backgroundImage = `url(${info.banner})`;
-                    els.channelBannerContainer.classList.remove('hidden');
-                } else {
-                    els.channelBannerContainer.classList.add('hidden');
-                }
-                await showChannelContent(state.current.tab, { reset: true });
-            } else if (r.view === 'playlist' && r.id) {
-                setView('playlist'); 
-                const [playlistId, channelId] = r.id.split(':');
-                state.playlistContext = { playlistId, channelId, title: r.title || 'Playlist' };
-                els.playlistTitle.textContent = state.playlistContext.title;
-                await renderPlaylistVideos({ reset: true });
             }
         } catch (e) {
-            console.error(`Fehler bei Navigation zu #${r.view}:`, e);
-            showStatus(e.message, true);
+            console.warn("Could not read from cache", e);
         }
-    };
-    
-    // ===== EVENT LISTENERS =====
-    const setupEventListeners = () => {
-        window.addEventListener('hashchange', handleRoute);
-        els.homeBtn.addEventListener('click', () => navigate('home'));
-        els.backBtn.addEventListener('click', () => history.back());
-        els.forwardBtn.addEventListener('click', () => history.forward());
-        els.backToChannelBtn.addEventListener('click', backToChannel);
-        els.playerClose.addEventListener('click', closePlayer);
-        els.overlay.addEventListener('click', e => { if (e.target === els.overlay) closePlayer(); });
-        els.tabs.forEach(btn => {
-            btn.addEventListener('click', () => { 
-                if (state.current.channelId) {
-                    navigate(`channel/${state.current.channelId}/${btn.dataset.tab}`);
-                }
-            });
-        });
-        els.moreVideosBtn.addEventListener('click', () => showChannelContent('videos', { reset: false }));
-        els.morePlaylistsBtn.addEventListener('click', () => showChannelContent('playlists', { reset: false }));
-        els.morePlaylistVideosBtn.addEventListener('click', () => renderPlaylistVideos({ reset: false }));
         
-        els.searchBtn.addEventListener('click', () => searchInChannel());
-        els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInChannel(); });
-        els.sortButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                state.current.searchOrder = btn.dataset.sort;
-                searchInChannel();
-            });
-        });
+        const freshData = await apiCallFn();
+        try {
+            localStorage.setItem(cacheKey, JSON.stringify({
+                timestamp: Date.now(),
+                data: freshData
+            }));
+        } catch (e) {
+            console.warn("Could not write to cache", e);
+        }
+        return freshData;
+    };
+    
+    // ===== RENDERERS =====
+    const renderChannelCard = (info) => {
+        const card = createEl('div', 'chan-card');
+        card.innerHTML = `<div class="chan-thumb"><img src="${info.thumb}" alt=""></div><div class="chan-meta"><div class="chan-title">${info.title}</div><div class="sub">Kanal öffnen</div></div>`;
+        card.addEventListener('click', () => navigate(`channel/${info.id}/videos`)); return card;
+    };
+    const videoCard = (v, context = {}) => {
+        const card = createEl('div', 'video-card');
+        const progress = state.progressData.get(v.videoId);
+        let progressPercent = 0;
+        if (progress && progress.duration > 0) {
+            progressPercent = Math.min((progress.currentTime / progress.duration) * 100, 100);
+        }
+
+        card.innerHTML = `
+            <div class="thumb">
+                <img loading="lazy" src="${v.thumb || ''}" alt="">
+                ${v.date ? `<span class="chip">${fmtDate(v.date)}</span>` : ''}
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${progressPercent}%"></div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="title">${v.title || '?'}</div>
+                <div class="meta">
+                    <span>${v.channelTitle || 'Video'}</span>
+                    <span>${v.duration ? formatDuration(v.duration) : ''}</span>
+                </div>
+            </div>`;
+        card.addEventListener('click', () => openPlayer(v.videoId, v.title, context)); 
+        return card;
+    };
+    const playlistCard = (p) => {
+        const card = createEl('div', 'video-card');
+        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta">${p.channelTitle || 'Playlist'}</div></div>`;
+        card.addEventListener('click', () => openPlaylist(p.playlistId, p.channelId, p.title)); return card;
+    };
+
+    // ===== DATA FETCHING & DATABASE =====
+    const saveProgress = (videoId, currentTime, duration) => {
+        if (!state.userId || !videoId || !isFinite(currentTime) || !isFinite(duration)) return;
+        const progressRef = db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId);
+        const data = { 
+            currentTime: Math.round(currentTime), 
+            duration: Math.round(duration), 
+            lastWatched: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        progressRef.set(data, { merge: true });
+        state.progressData.set(videoId, data);
+    };
+
+    const fetchAllProgress = async () => {
+        if (!state.userId) return;
+        state.progressData.clear();
+        const progressSnap = await db.collection('users').doc(state.userId).collection('videoProgress').get();
+        progressSnap.forEach(doc => {
+            state.progressData.set(doc.id, doc.data());
+        });
+    };
+    
+    // ===== MODIFIZIERT: Nutzt jetzt Caching =====
+    const getChannelInfo = async (identifier) => {
+        const handle = typeof identifier === 'object' ? identifier.handle : identifier;
+        if (state.channels.has(handle) && state.channels.get(handle).banner) {
+            return state.channels.get(handle);
+        }
         
-        els.toggleChannelsBtn.addEventListener('click', () => {
-            const isHidden = els.channelGridRest.classList.toggle('hidden');
-            els.toggleChannelsBtn.textContent = isHidden ? 'Mehr anzeigen' : 'Weniger anzeigen';
-        });
+        // Cache für 1 Tag (1440 Minuten)
+        return await cachedApi(`channel_info_${handle}`, 1440, async () => {
+            let channelId = (typeof identifier === 'object') ? null : (identifier.startsWith('@') ? null : identifier);
 
-        els.authBtn.addEventListener('click', () => {
-            if (auth.currentUser) {
-                auth.signOut();
-            } else {
-                auth.signInWithPopup(provider).catch(error => {
-                    console.error("Google Sign in failed:", error);
-                    showStatus("Anmeldung mit Google fehlgeschlagen.", true);
-                });
+            if (!channelId) {
+                const searchData = await api('search', { q: handle, type: 'channel', part: 'snippet', maxResults: 1 });
+                const searchResult = searchData.items?.[0];
+                if (!searchResult) throw new Error(`Kanal-Handle '${handle}' nicht gefunden.`);
+                channelId = searchResult.snippet.channelId;
             }
-        });
-    };
+            
+            const data = await api('channels', { id: channelId, part: 'snippet,contentDetails,brandingSettings' });
+            const c = data.items?.[0]; if (!c) throw new Error('Kanal-Info für ID: ' + channelId + ' nicht gefunden.');
+            
+            let banner = c.brandingSettings?.image?.bannerTvImageUrl 
+                         || c.brandingSettings?.image?.bannerTabletImageUrl
+                         || c.brandingSettings?.image?.bannerMobileImageUrl
+                         || c.brandingSettings?.image?.bannerExternalUrl;
+            
+            if (banner) {
+                banner = banner.replace(/=w\d+/, '=w2560');
+            }
 
-    // ===== APP INITIALIZATION =====
-    const initAppLogic = async () => {
-        await fetchAllProgress();
-        setupEventListeners();
-        await handleRoute();
-    };
-    
-    const initAuth = () => {
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                state.userId = user.uid;
-                els.authBtn.textContent = 'Abmelden';
-                initAppLogic();
-            } else {
-                state.userId = null;
-                state.progressData.clear();
-                els.authBtn.textContent = 'Anmelden';
-                initAppLogic();
-            }
+            const info = { 
+                id: c.id, 
+                title: c.snippet?.title || '?', 
+                thumb: c.snippet?.thumbnails?.default?.url, 
+                uploadsId: c.contentDetails?.relatedPlaylists?.uploads,
+                banner: banner
+            };
+            
+            state.channels.set(handle, info);
+            state.channels.set(info.id, info);
+            return info;
         });
-    };
-    
-    window.addEventListener('youtube-api-ready', initAuth);
+    };
+    
+    // ===== KORRIGIERT: Behebt den 400 invalidFilters Fehler =====
+    const addDurationsToVideos = async (items, idKey) => {
+        if (!items || items.length === 0) return items;
+        const getVideoId = (item, key) => (key === 'contentDetails') ? item.contentDetails?.videoId : item.id?.videoId;
+        const durationMap = new Map();
+        const itemsWithVideoId = items.filter(it => getVideoId(it, idKey));
+
+        // Anfragen in 50er-Pakete aufteilen (Chunking)
+        const CHUNK_SIZE = 50;
+        for (let i = 0; i < itemsWithVideoId.length; i += CHUNK_SIZE) {
+            const chunk = itemsWithVideoId.slice(i, i + CHUNK_SIZE);
+            const videoIds = chunk.map(it => getVideoId(it, idKey)).join(',');
+            
+            if (videoIds) {
+                try {
+                    const videoData = await api('videos', { id: videoIds, part: 'contentDetails' });
+                    videoData.items.forEach(v => {
+                        durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration));
+                    });
+                } catch (e) {
+                    console.error(`Fehler beim Laden der Video-Metadaten für Chunk: ${videoIds}`, e);
+                }
+            }
+        }
+
+        return items.map(it => ({ ...it, duration: durationMap.get(getVideoId(it, idKey)) }));
+    };
+
+    const buildHome = async () => {
+        showStatus('Lade Kanäle und neueste Videos...');
+        els.channelGridFavorites.innerHTML = ''; els.channelGridRest.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
+        
+        const infoPromises = ALLOWED_CHANNELS.map(ch => getChannelInfo(ch));
+        const infoResults = await Promise.allSettled(infoPromises);
+
+        const successfulChannels = [];
+        infoResults.forEach((result, i) => {
+            if (result.status === 'fulfilled' && result.value) {
+                const channelConfig = ALLOWED_CHANNELS[i];
+                const grid = channelConfig.favorite ? els.channelGridFavorites : els.channelGridRest;
+                grid.appendChild(renderChannelCard(result.value));
+                successfulChannels.push(result.value);
+            } else { console.error("Konnte Kanal-Info nicht laden:", result.reason); }
+        });
+
+        if (els.channelGridRest.children.length > 0) {
+            els.toggleChannelsBtn.classList.remove('hidden');
+        } else {
+            els.toggleChannelsBtn.classList.add('hidden');
+        }
+
+        if (successfulChannels.length > 0) {
+            // ===== MODIFIZIERT: Nutzt jetzt Caching =====
+            // Cache für 60 Minuten
+            const videoPromises = successfulChannels.map(info =>
+                cachedApi(`latest_videos_${info.id}`, 60, () =>
+                    api('playlistItems', { playlistId: info.uploadsId, maxResults: 10, part: 'snippet,contentDetails' })
+                ).then(data => ({...data, channelTitle: info.title }))
+            );
+
+            const videoResults = await Promise.allSettled(videoPromises);
+            
+            let allItems = videoResults
+                .filter(r => r.status === 'fulfilled' && r.value.items)
+                .flatMap(r => r.value.items.map(item => ({...item, channelTitle: r.value.channelTitle })))
+                .filter(it => it.contentDetails && it.contentDetails.videoId);
+            
+            allItems = await addDurationsToVideos(allItems, 'contentDetails');
+            
+            const latestVideos = successfulChannels.map(info => {
+                const unseenVideos = allItems.filter(v => {
+                    const progress = state.progressData.get(v.contentDetails.videoId);
+                    const hasDuration = typeof v.duration === 'number';
+                    return v.snippet.channelId === info.id && (!progress || !hasDuration || (progress.currentTime / v.duration) < 0.9);
+                });
+                const nonShorts = unseenVideos.filter(v => v.duration > 120);
+                return nonShorts[0];
+            }).filter(Boolean);
+
+            const allVideos = latestVideos.map(it => ({
+                    videoId: it.contentDetails.videoId, title: it.snippet.title,
+                    date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url,
+                    channelId: it.snippet.channelId, channelTitle: it.channelTitle, duration: it.duration
+                }));
+            
+            allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (allVideos.length === 0) {
+                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen, ungesehenen Videos gefunden.</div>`;
+            } else {
+                allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v, { channelId: v.channelId })));
+            }
+        } else {
+             els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Kanäle konnten geladen werden.</div>`;
+        }
+        hideStatus();
+    };
+    
+    const showChannelContent = async (type, { reset = true } = {}) => {
+        els.sortOptions.classList.add('hidden');
+        els.searchInput.value = '';
+        state.current.searchQuery = null;
+
+        const isVideos = type === 'videos';
+        const tabEl = isVideos ? els.videosTab : els.playlistsTab;
+        const otherTabEl = isVideos ? els.playlistsTab : els.videosTab;
+        const moreBtn = isVideos ? els.moreVideosBtn : els.morePlaylistsBtn;
+        
+        els.moreVideosBtn.classList.add('hidden');
+        els.morePlaylistsBtn.classList.add('hidden');
+
+        const pageTokenKey = isVideos ? 'videosPageToken' : 'playlistsPageToken';
+        if (reset) { tabEl.innerHTML = ''; state.current[pageTokenKey] = null; }
+        showStatus(`Lade ${type}...`, false);
+        tabEl.classList.remove('hidden'); otherTabEl.classList.add('hidden');
+        try {
+            const info = await getChannelInfo(state.current.channelId);
+            
+            // ===== MODIFIZIERT: Nutzt jetzt Caching =====
+            const pageToken = state.current[pageTokenKey] || 'start'; // 'start' for first page
+            let data = isVideos 
+                ? await cachedApi(`channel_videos_${info.id}_${pageToken}`, 60, () => 
+                    api('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey], part: 'snippet,contentDetails' }))
+                : await cachedApi(`channel_playlists_${info.id}_${pageToken}`, 60, () =>
+                    api('playlists', { channelId: state.current.channelId, pageToken: state.current[pageTokenKey], part: 'snippet' }));
+
+            state.current[pageTokenKey] = data.nextPageToken || null;
+            if (reset) tabEl.innerHTML = '';
+
+            let items = (data.items || []).filter(it => it.snippet.thumbnails);
+            if (isVideos) {
+                items = await addDurationsToVideos(items, 'contentDetails');
+                items = items.filter(it => it.duration > 120);
+            }
+
+            items.forEach(it => {
+                if (isVideos) {
+                    tabEl.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, duration: it.duration }, { channelId: info.id }));
+                } else {
+                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
+                }
+            });
+            moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
+            hideStatus();
+        } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, true); }
+    };
+        
+    const renderPlaylistVideos = async ({ reset = true } = {}) => {
+        if (reset) { state.current.playlistVideosPageToken = null; els.playlistVideos.innerHTML = ''; }
+        showStatus('Lade Playlist-Inhalte...', false);
+        try {
+            const info = await getChannelInfo(state.playlistContext.channelId);
+
+            // ===== MODIFIZIERT: Nutzt jetzt Caching =====
+            const pageToken = state.current.playlistVideosPageToken || 'start';
+            const data = await cachedApi(`playlist_${state.playlistContext.playlistId}_${pageToken}`, 60, () =>
+                api('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet,contentDetails' })
+            );
+
+            state.current.playlistVideosPageToken = data.nextPageToken || null;
+            const playlistContext = { playlistId: state.playlistContext.playlistId, channelId: state.playlistContext.channelId };
+            
+            let items = await addDurationsToVideos(data.items || [], 'contentDetails');
+            items = items.filter(it => it.duration > 120);
+            
+            items.forEach(it => {
+                els.playlistVideos.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, duration: it.duration }, playlistContext));
+            });
+
+            els.morePlaylistVideosBtn.classList.toggle('hidden', !state.current.playlistVideosPageToken);
+            hideStatus();
+        } catch(e) { showStatus(`Fehler beim Laden der Playlist: ${e.message}`, true); }
+    };
+
+    const searchInChannel = async () => {
+        const q = els.searchInput.value.trim();
+        state.current.searchQuery = q;
+        if (!q) {
+            els.sortOptions.classList.add('hidden');
+            showChannelContent(state.current.tab, { reset: true });
+            return;
+        }
+
+        els.moreVideosBtn.classList.add('hidden');
+        els.morePlaylistsBtn.classList.add('hidden');
+        els.sortOptions.classList.remove('hidden');
+        els.sortButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
+        
+        const searchType = 'video';
+        const tabEl = els.videosTab;
+        
+        showStatus(`Suche nach "${q}"...`);
+        tabEl.innerHTML = '';
+        try {
+            const query = `"${q}"`;
+            // Suchergebnisse werden bewusst NICHT gecached, um sie aktuell zu halten
+            const data = await api('search', { channelId: state.current.channelId, q: query, type: searchType, part: 'snippet', maxResults: 25, order: state.current.searchOrder });
+            const info = await getChannelInfo(state.current.channelId);
+            
+            let items = (data.items || []).filter(it => it.snippet.thumbnails);
+            items = await addDurationsToVideos(items, 'id');
+            items = items.filter(it => it.duration > 120);
+
+            items.forEach(it => {
+                tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, duration: it.duration }, { channelId: state.current.channelId }));
+            });
+            hideStatus();
+        } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
+    };
+
+    // ===== NAVIGATION & ROUTING =====
+    const navigate = (hash) => { window.location.hash = hash; };
+    const parseRoute = () => {
+        const h = window.location.hash.slice(1); if(!h) return {view: 'home'}; const parts = h.split('/');
+        return { view: parts[0], id: parts[1], tab: parts[2], title: parts[3] ? decodeURIComponent(parts[3]) : null };
+    };
+    const setView = (name) => {
+        els.homeView.classList.toggle('hidden', name !== 'home');
+        els.channelView.classList.toggle('hidden', name !== 'channel');
+        els.playlistView.classList.toggle('hidden', name !== 'playlist');
+    };
+    const backToChannel = () => {
+        if(state.lastChannelRoute) navigate(state.lastChannelRoute);
+        else if(state.current.channelId) navigate(`channel/${state.current.channelId}/playlists`);
+        else navigate('home');
+    };
+    const openPlayer = (videoId, title, context) => {
+        els.playerTitle.textContent = title || 'Video';
+        els.overlay.classList.add('show');
+        
+        const progress = state.progressData.get(videoId);
+        const startSeconds = progress ? progress.currentTime : 0;
+
+        state.current.player = new YT.Player('player-mount', {
+            height: '100%', width: '100%', videoId: videoId,
+            playerVars: { 'playsinline': 1, 'autoplay': 1, 'rel': 0, 'start': startSeconds },
+            events: { 'onStateChange': onPlayerStateChange }
+        });
+    };
+    
+    const onPlayerStateChange = (event) => {
+        const player = event.target;
+        const videoId = player.getVideoData().video_id;
+
+        if (event.data == YT.PlayerState.PLAYING) {
+            clearInterval(state.current.playerStateInterval);
+            state.current.playerStateInterval = setInterval(() => {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                if (currentTime > 0 && duration > 0) {
+                    saveProgress(videoId, currentTime, duration);
+                }
+            }, 5000);
+        } else {
+            clearInterval(state.current.playerStateInterval);
+        }
+    };
+
+    const closePlayer = () => {
+        clearInterval(state.current.playerStateInterval);
+        if (state.current.player && typeof state.current.player.destroy === 'function') {
+            state.current.player.destroy();
+        }
+        state.current.player = null;
+        handleRoute();
+        els.overlay.classList.remove('show');
+    };
+    const openPlaylist = (playlistId, channelId, title) => {
+        state.lastChannelRoute = `channel/${channelId}/playlists`;
+        navigate(`playlist/${playlistId}:${channelId}/${encodeURIComponent(title || '')}`);
+    };
+    
+    const handleRoute = async () => {
+        const r = parseRoute();
+        hideStatus();
+        try {
+            if (r.view === 'home' || !r.view) {
+                setView('home');
+                await buildHome();
+            } else if (r.view === 'channel' && r.id) {
+                setView('channel'); 
+                state.current.channelId = r.id; 
+                state.current.tab = r.tab || 'videos';
+                els.tabs.forEach(t => {
+                    t.classList.remove('active');
+                    if(t.dataset.tab === state.current.tab) t.classList.add('active');
+                });
+                const info = await getChannelInfo(r.id);
+                els.channelMeta.textContent = info.title;
+
+                if (info.banner) {
+                    els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
+                    els.channelBanner.style.backgroundImage = `url(${info.banner})`;
+                    els.channelBannerContainer.classList.remove('hidden');
+                } else {
+                    els.channelBannerContainer.classList.add('hidden');
+                }
+                await showChannelContent(state.current.tab, { reset: true });
+            } else if (r.view === 'playlist' && r.id) {
+                setView('playlist'); 
+                const [playlistId, channelId] = r.id.split(':');
+                state.playlistContext = { playlistId, channelId, title: r.title || 'Playlist' };
+                els.playlistTitle.textContent = state.playlistContext.title;
+                await renderPlaylistVideos({ reset: true });
+            }
+        } catch (e) {
+            console.error(`Fehler bei Navigation zu #${window.location.hash}:`, e);
+            showStatus(e.message, true);
+        }
+    };
+    
+    // ===== EVENT LISTENERS =====
+    const setupEventListeners = () => {
+        window.addEventListener('hashchange', handleRoute);
+        els.homeBtn.addEventListener('click', () => navigate('home'));
+        els.backBtn.addEventListener('click', () => history.back());
+        els.forwardBtn.addEventListener('click', () => history.forward());
+        els.backToChannelBtn.addEventListener('click', backToChannel);
+        els.playerClose.addEventListener('click', closePlayer);
+        els.overlay.addEventListener('click', e => { if (e.target === els.overlay) closePlayer(); });
+        els.tabs.forEach(btn => {
+            btn.addEventListener('click', () => { 
+                if (state.current.channelId) {
+                    navigate(`channel/${state.current.channelId}/${btn.dataset.tab}`);
+                }
+            });
+        });
+        els.moreVideosBtn.addEventListener('click', () => showChannelContent('videos', { reset: false }));
+        els.morePlaylistsBtn.addEventListener('click', () => showChannelContent('playlists', { reset: false }));
+        els.morePlaylistVideosBtn.addEventListener('click', () => renderPlaylistVideos({ reset: false }));
+        
+        els.searchBtn.addEventListener('click', () => searchInChannel());
+        els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInChannel(); });
+        els.sortButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.current.searchOrder = btn.dataset.sort;
+                searchInChannel();
+            });
+        });
+        
+        els.toggleChannelsBtn.addEventListener('click', () => {
+            const isHidden = els.channelGridRest.classList.toggle('hidden');
+            els.toggleChannelsBtn.textContent = isHidden ? 'Mehr anzeigen' : 'Weniger anzeigen';
+        });
+
+        els.authBtn.addEventListener('click', () => {
+            if (auth.currentUser) {
+                auth.signOut();
+            } else {
+                auth.signInWithPopup(provider).catch(error => {
+                    console.error("Google Sign in failed:", error);
+                    showStatus("Anmeldung mit Google fehlgeschlagen.", true);
+                });
+            }
+        });
+    };
+
+    // ===== APP INITIALIZATION =====
+    const initAppLogic = async () => {
+        await fetchAllProgress();
+        setupEventListeners();
+        await handleRoute();
+    };
+    
+    const initAuth = () => {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                state.userId = user.uid;
+                els.authBtn.textContent = 'Abmelden';
+                initAppLogic();
+            } else {
+                state.userId = null;
+                state.progressData.clear();
+                els.authBtn.textContent = 'Anmelden';
+                initAppLogic();
+            }
+        });
+    };
+    
+    window.addEventListener('youtube-api-ready', initAuth);
 });
 </script>
 
 </body>
 </html>
-
