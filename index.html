@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V4</title>
+  <title>YouTube Whitelist V4.1</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -189,19 +189,36 @@ document.addEventListener('DOMContentLoaded', () => {
       appId: "1:747410045455:web:805ede68f0aefffae1417a"
     };
     
-    const FAVORITE_CHANNELS = [
-        "@jpperformance", "@MotorenZimmer", "@Autodoktoren",
-        "@automotorundsport", "@MrWissen2go"
-    ];
+    // ========================================================================
+    // HIER KANÄLE UND FAVORITEN EINFACH ANPASSEN
+    // ========================================================================
+    const CHANNELS_CONFIG = [
+        // Favoriten
+        { handle: '@jpperformance', isFavorite: true },
+        { handle: '@Autodoktoren', isFavorite: true },
+        { handle: '@BreakingLab', isFavorite: true },
+        { handle: '@Halle77', isFavorite: true },
 
-    const OTHER_CHANNELS = [
-        "@Der8auer", "@GamersNexus", "@Dave2D",
-        "@MKBHD", "@LinusTechTips", "@zrep",
-        "@Kliemannsland", "@ZDFMAGAZINROYALE",
-        "@BreakingLab", "@3blue1brown"
+        // Weitere Kanäle
+        { handle: '@automotorsport', isFavorite: false },
+        { handle: '@MotorenZimmer', isFavorite: false },
+        { handle: '@MrWissen2go', isFavorite: false },
+        { handle: '@veritasium', isFavorite: false },
+        { handle: '@Simplicissimus', isFavorite: false },
+        { handle: '@schrauber_tv', isFavorite: false },
+        { handle: '@GRIPRTL2', isFavorite: false },
+        { handle: '@EngineeringExplained', isFavorite: false },
+        { handle: '@TheEfficientEngineer', isFavorite: false },
+        { handle: '@100SekundenPhysik', isFavorite: false },
+        { handle: '@TerraXLeschundCo', isFavorite: false },
+        { handle: '@ThisOldTony', isFavorite: false },
+        { handle: '@mndiaye_97', isFavorite: false } // Casual Geographic
     ];
+    
+    // Generate lists from the single config object for easier use in the app
+    const ALLOWED_CHANNELS = CHANNELS_CONFIG.map(c => c.handle);
+    const FAVORITE_CHANNEL_HANDLES = CHANNELS_CONFIG.filter(c => c.isFavorite).map(c => c.handle);
 
-    const ALLOWED_CHANNELS = [...FAVORITE_CHANNELS, ...OTHER_CHANNELS];
 
     // ===== STATE & ELEMENTS =====
     const state = {
@@ -248,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fmtDate = s => new Date(s).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
     
     const formatDuration = (seconds) => {
-        if (!seconds || seconds < 0) return '';
+        if (seconds === undefined || seconds === null || seconds < 0) return '';
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         const s = Math.floor(seconds % 60);
@@ -308,8 +325,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // ===== RENDERERS =====
-    const renderChannelCard = (info) => {
+    const renderChannelCard = (info, handle) => {
         const card = createEl('div', 'chan-card');
+        card.dataset.handle = handle; // Store handle for later reference
         card.innerHTML = `<div class="chan-thumb"><img src="${info.thumb}" alt=""></div><div class="chan-meta"><div class="chan-title">${info.title}</div><div class="sub">Kanal öffnen</div></div>`;
         card.addEventListener('click', () => navigate(`channel/${info.id}/videos`)); return card;
     };
@@ -396,7 +414,8 @@ document.addEventListener('DOMContentLoaded', () => {
             title: c.snippet?.title || '?', 
             thumb: c.snippet?.thumbnails?.default?.url, 
             uploadsId: c.contentDetails?.relatedPlaylists?.uploads,
-            banner: banner
+            banner: banner,
+            handle: identifier // Store the original handle for reference
         };
         state.channels.set(identifier, info);
         state.channels.set(info.id, info);
@@ -424,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return items
             .map(item => ({ ...item, durationSeconds: durationMap.get(getVideoId(item, idKey)) || 0 }))
-            .filter(item => item.durationSeconds > 120); // Filter shorts here
+            .filter(item => item.durationSeconds > 120); // Filter shorts here (videos under 2 minutes)
     };
 
     const buildHome = async () => {
@@ -435,22 +454,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const infoResults = await Promise.allSettled(infoPromises);
 
         const successfulChannels = [];
-        infoResults.forEach(result => {
+        infoResults.forEach((result, index) => {
             if (result.status === 'fulfilled' && result.value) {
-                const card = renderChannelCard(result.value);
-                if (FAVORITE_CHANNELS.includes(result.value.title) || FAVORITE_CHANNELS.some(h => state.channels.get(h)?.id === result.value.id)) {
+                const handle = ALLOWED_CHANNELS[index];
+                const info = result.value;
+                successfulChannels.push(info);
+
+                const card = renderChannelCard(info, handle);
+                if (FAVORITE_CHANNEL_HANDLES.includes(handle)) {
                     els.favoriteChannelGrid.appendChild(card);
                 } else {
                     els.otherChannelGrid.appendChild(card);
                 }
-                successfulChannels.push(result.value);
             } else { console.error("Konnte Kanal-Info nicht laden:", result.reason); }
         });
-
-        const favoriteChannelInfos = successfulChannels.filter(info => FAVORITE_CHANNELS.includes(info.title) || FAVORITE_CHANNELS.some(h => state.channels.get(h)?.id === info.id));
+        
+        const favoriteChannelInfos = successfulChannels.filter(info => 
+            FAVORITE_CHANNEL_HANDLES.includes(info.handle)
+        );
 
         if (favoriteChannelInfos.length > 0) {
-            const videoPromises = favoriteChannelInfos.map(info => cachedApi('playlistItems', { playlistId: info.uploadsId, maxResults: 10, part: 'snippet,contentDetails' }).then(data => ({...data, channelTitle: info.title })));
+            const videoPromises = favoriteChannelInfos.map(info => 
+                cachedApi('playlistItems', { playlistId: info.uploadsId, maxResults: 20, part: 'snippet,contentDetails' }).then(data => ({...data, channelTitle: info.title }))
+            );
             const videoResults = await Promise.allSettled(videoPromises);
             
             let allItems = videoResults
@@ -468,8 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const firstUnwatchedVideo = channelVideos.find(v => {
                     const progress = state.progressData.get(v.contentDetails.videoId);
-                    if (!progress || !progress.duration) return true; // Not watched at all
-                    return (progress.currentTime / progress.duration) < 0.9; // Less than 90% watched
+                    if (!progress || !progress.duration) return true;
+                    return (progress && progress.duration > 0) ? (progress.currentTime / progress.duration) < 0.9 : true; 
                 });
 
                 if (firstUnwatchedVideo) {
@@ -487,12 +513,12 @@ document.addEventListener('DOMContentLoaded', () => {
             allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             if (allVideos.length === 0) {
-                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen, ungesehenen Videos (länger als 2 Min.) gefunden.</div>`;
+                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen, ungesehenen Videos (länger als 2 Min.) der Favoriten gefunden.</div>`;
             } else {
                 allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v, { channelId: v.channelId })));
             }
         } else {
-             els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Lieblingskanäle konnten geladen werden.</div>`;
+             els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Favoriten-Kanäle für Video-Scan gefunden.</div>`;
         }
         hideStatus();
     };
@@ -646,10 +672,6 @@ document.addEventListener('DOMContentLoaded', () => {
             state.current.player.destroy();
         }
         state.current.player = null;
-        // No full handleRoute call to prevent flickering, just update progress bars.
-        document.querySelectorAll('.video-card').forEach(card => {
-            // This is a simplified update. A more robust solution might need a data-id on the card.
-        });
         els.overlay.classList.remove('show');
     };
     const openPlaylist = (playlistId, channelId, title) => {
@@ -717,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.morePlaylistVideosBtn.addEventListener('click', () => renderPlaylistVideos({ reset: false }));
         
         els.searchBtn.addEventListener('click', () => searchInChannel());
-        els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInChannel(); });
+        els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInchannel(); });
         els.sortButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 state.current.searchOrder = btn.dataset.sort;
@@ -765,7 +787,8 @@ document.addEventListener('DOMContentLoaded', () => {
         els.authBtn.addEventListener('click', handleAuth);
         auth.onAuthStateChanged(async (user) => {
             updateUIForAuthState(user);
-            await initAppLogic();
+            // Re-initialize app logic on auth state change to fetch progress or clear it
+            await initAppLogic(); 
         });
     };
     
