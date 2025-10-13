@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V4.1</title>
+  <title>YouTube Whitelist V4.2</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -432,7 +432,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const videoIds = items.map(it => getVideoId(it, idKey)).filter(Boolean).join(',');
-        if (!videoIds) return [];
+        
+        // ========================================================================
+        // KORREKTUR: API-Aufruf nur starten, wenn es auch wirklich IDs gibt.
+        // ========================================================================
+        if (!videoIds || videoIds.length === 0) {
+            return []; // Return empty array to prevent API error
+        }
 
         const videoData = await cachedApi('videos', { id: videoIds, part: 'contentDetails' });
         
@@ -713,7 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderPlaylistVideos({ reset: true });
             }
         } catch (e) {
-            console.error(`Fehler bei Navigation zu #${r.view}:`, e);
+            console.error(`Fehler bei Navigation zu #${window.location.hash}:`, e);
             showStatus(e.message, true);
         }
     };
@@ -739,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.morePlaylistVideosBtn.addEventListener('click', () => renderPlaylistVideos({ reset: false }));
         
         els.searchBtn.addEventListener('click', () => searchInChannel());
-        els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInchannel(); });
+        els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInChannel(); });
         els.sortButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 state.current.searchOrder = btn.dataset.sort;
@@ -750,8 +756,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== APP INITIALIZATION & AUTH =====
     const initAppLogic = async () => {
-        if(state.userId) await fetchAllProgress();
         setupEventListeners();
+        if(state.userId) {
+            await fetchAllProgress();
+        }
         await handleRoute();
     };
     
@@ -784,11 +792,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const initAuth = () => {
+        let isFirstAuthChangeEvent = true;
         els.authBtn.addEventListener('click', handleAuth);
         auth.onAuthStateChanged(async (user) => {
+            const wasLoggedIn = !!state.user;
+            const isLoggedIn = !!user;
+            
             updateUIForAuthState(user);
-            // Re-initialize app logic on auth state change to fetch progress or clear it
-            await initAppLogic(); 
+
+            if(isFirstAuthChangeEvent) {
+                isFirstAuthChangeEvent = false;
+                await initAppLogic();
+            } else if (wasLoggedIn !== isLoggedIn) {
+                // If auth state changed (login/logout), re-run the logic
+                await initAppLogic();
+            }
         });
     };
     
