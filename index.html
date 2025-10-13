@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V4.2</title>
+  <title>YouTube Whitelist V4.5 (Optimized)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== RENDERERS =====
     const renderChannelCard = (info, handle) => {
         const card = createEl('div', 'chan-card');
-        card.dataset.handle = handle; // Store handle for later reference
+        card.dataset.handle = handle;
         card.innerHTML = `<div class="chan-thumb"><img src="${info.thumb}" alt=""></div><div class="chan-meta"><div class="chan-title">${info.title}</div><div class="sub">Kanal öffnen</div></div>`;
         card.addEventListener('click', () => navigate(`channel/${info.id}/videos`)); return card;
     };
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
             thumb: c.snippet?.thumbnails?.default?.url, 
             uploadsId: c.contentDetails?.relatedPlaylists?.uploads,
             banner: banner,
-            handle: identifier // Store the original handle for reference
+            handle: identifier
         };
         state.channels.set(identifier, info);
         state.channels.set(info.id, info);
@@ -424,49 +424,53 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const enrichVideosWithDuration = async (items, idKey) => {
         if (!items || items.length === 0) return [];
-        
+
         const getVideoId = (item, key) => {
             if (key === 'contentDetails') return item.contentDetails?.videoId;
             if (key === 'id') return item.id?.videoId;
+            if (key === 'snippet') return item.snippet?.resourceId?.videoId;
             return null;
         };
 
-        const videoIds = items.map(it => getVideoId(it, idKey)).filter(Boolean).join(',');
-        
-        // ========================================================================
-        // KORREKTUR: API-Aufruf nur starten, wenn es auch wirklich IDs gibt.
-        // ========================================================================
-        if (!videoIds || videoIds.length === 0) {
-            return []; // Return empty array to prevent API error
-        }
+        const allVideoIds = items.map(it => getVideoId(it, idKey)).filter(Boolean);
 
-        const videoData = await cachedApi('videos', { id: videoIds, part: 'contentDetails' });
-        
+        if (allVideoIds.length === 0) return [];
+
         const durationMap = new Map();
-        videoData.items.forEach(v => {
-            durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration));
-        });
+        const CHUNK_SIZE = 50;
+
+        for (let i = 0; i < allVideoIds.length; i += CHUNK_SIZE) {
+            const chunk = allVideoIds.slice(i, i + CHUNK_SIZE);
+            const videoData = await cachedApi('videos', {
+                id: chunk.join(','),
+                part: 'contentDetails'
+            });
+            videoData.items.forEach(v => {
+                durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration));
+            });
+        }
         
         return items
             .map(item => ({ ...item, durationSeconds: durationMap.get(getVideoId(item, idKey)) || 0 }))
-            .filter(item => item.durationSeconds > 120); // Filter shorts here (videos under 2 minutes)
+            .filter(item => item.durationSeconds > 120);
     };
 
+    // ========================================================================
+    // NEUE, HOCHEFFIZIENTE LOGIK FÜR DIE STARTSEITE
+    // ========================================================================
     const buildHome = async () => {
         showStatus('Lade Kanäle und neueste Videos...');
         els.favoriteChannelGrid.innerHTML = ''; els.otherChannelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
         
+        // Render all channel cards first
         const infoPromises = ALLOWED_CHANNELS.map(handle => getChannelInfo(handle));
         const infoResults = await Promise.allSettled(infoPromises);
-
         const successfulChannels = [];
         infoResults.forEach((result, index) => {
             if (result.status === 'fulfilled' && result.value) {
                 const handle = ALLOWED_CHANNELS[index];
-                const info = result.value;
-                successfulChannels.push(info);
-
-                const card = renderChannelCard(info, handle);
+                successfulChannels.push(result.value);
+                const card = renderChannelCard(result.value, handle);
                 if (FAVORITE_CHANNEL_HANDLES.includes(handle)) {
                     els.favoriteChannelGrid.appendChild(card);
                 } else {
@@ -480,51 +484,43 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
         if (favoriteChannelInfos.length > 0) {
-            const videoPromises = favoriteChannelInfos.map(info => 
-                cachedApi('playlistItems', { playlistId: info.uploadsId, maxResults: 20, part: 'snippet,contentDetails' }).then(data => ({...data, channelTitle: info.title }))
+            // Step 1: Fetch ONLY the single latest video item for each favorite channel.
+            const latestVideoItemPromises = favoriteChannelInfos.map(info =>
+                cachedApi('playlistItems', {
+                    playlistId: info.uploadsId,
+                    maxResults: 1,
+                    part: 'snippet'
+                }).then(data => ({ ...data, channelTitle: info.title }))
             );
-            const videoResults = await Promise.allSettled(videoPromises);
-            
-            let allItems = videoResults
-                .filter(r => r.status === 'fulfilled' && r.value.items)
-                .flatMap(r => r.value.items.map(item => ({...item, channelTitle: r.value.channelTitle })))
-                .filter(it => it.contentDetails && it.contentDetails.videoId);
+            const results = await Promise.allSettled(latestVideoItemPromises);
 
-            const enrichedVideos = await enrichVideosWithDuration(allItems, 'contentDetails');
+            const latestItems = results
+                .filter(r => r.status === 'fulfilled' && r.value.items && r.value.items.length > 0)
+                .map(r => ({ ...r.value.items[0], channelTitle: r.value.channelTitle }));
 
-            const latestSelectableVideos = [];
-            favoriteChannelInfos.forEach(info => {
-                const channelVideos = enrichedVideos
-                    .filter(v => v.snippet.channelId === info.id)
-                    .sort((a,b) => new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt));
-                
-                const firstUnwatchedVideo = channelVideos.find(v => {
-                    const progress = state.progressData.get(v.contentDetails.videoId);
-                    if (!progress || !progress.duration) return true;
-                    return (progress && progress.duration > 0) ? (progress.currentTime / progress.duration) < 0.9 : true; 
-                });
+            if (latestItems.length > 0) {
+                 // Step 2: Make ONE efficient API call to get durations for these few videos.
+                const videoIds = latestItems.map(item => item.snippet.resourceId.videoId);
+                const enrichedItems = await enrichVideosWithDuration(latestItems, 'snippet');
 
-                if (firstUnwatchedVideo) {
-                    latestSelectableVideos.push(firstUnwatchedVideo);
-                }
-            });
-
-            const allVideos = latestSelectableVideos.map(it => ({
-                    videoId: it.contentDetails.videoId, title: it.snippet.title,
-                    date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url,
-                    channelId: it.snippet.channelId, channelTitle: it.channelTitle,
+                const allVideos = enrichedItems.map(it => ({
+                    videoId: it.snippet.resourceId.videoId,
+                    title: it.snippet.title,
+                    date: it.snippet.publishedAt,
+                    thumb: it.snippet.thumbnails?.medium?.url,
+                    channelId: it.snippet.channelId,
+                    channelTitle: it.channelTitle,
                     durationSeconds: it.durationSeconds
                 }));
-            
-            allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            if (allVideos.length === 0) {
-                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen, ungesehenen Videos (länger als 2 Min.) der Favoriten gefunden.</div>`;
+                
+                allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
+                allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v)));
+
             } else {
-                allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v, { channelId: v.channelId })));
+                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen Videos bei Favoriten gefunden.</div>`;
             }
         } else {
-             els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Favoriten-Kanäle für Video-Scan gefunden.</div>`;
+             els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Favoriten-Kanäle konfiguriert.</div>`;
         }
         hideStatus();
     };
@@ -549,19 +545,19 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const info = await getChannelInfo(state.current.channelId);
             let data = isVideos 
-                ? await cachedApi('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey], part: 'snippet,contentDetails', maxResults: 15 })
+                ? await cachedApi('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey], part: 'snippet', maxResults: 15 })
                 : await cachedApi('playlists', { channelId: state.current.channelId, pageToken: state.current[pageTokenKey], part: 'snippet', maxResults: 15 });
             state.current[pageTokenKey] = data.nextPageToken || null;
             if (reset) tabEl.innerHTML = '';
 
             let items = (data.items || []).filter(it => it.snippet?.thumbnails);
             if (isVideos) {
-                items = await enrichVideosWithDuration(items, 'contentDetails');
+                items = await enrichVideosWithDuration(items, 'snippet');
             }
 
             items.forEach(it => {
                 if (isVideos) {
-                    tabEl.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }, { channelId: info.id }));
+                    tabEl.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }, { channelId: info.id }));
                 } else {
                     tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
                 }
@@ -576,13 +572,12 @@ document.addEventListener('DOMContentLoaded', () => {
         showStatus('Lade Playlist-Inhalte...', false);
         try {
             const info = await getChannelInfo(state.playlistContext.channelId);
-            const data = await cachedApi('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet,contentDetails' });
+            const data = await cachedApi('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet' });
             state.current.playlistVideosPageToken = data.nextPageToken || null;
-            const playlistContext = { playlistId: state.playlistContext.playlistId, channelId: state.playlistContext.channelId };
             
-            const enrichedVideos = await enrichVideosWithDuration(data.items || [], 'contentDetails');
+            const enrichedVideos = await enrichVideosWithDuration(data.items || [], 'snippet');
             enrichedVideos.forEach(it => {
-                els.playlistVideos.appendChild(videoCard({ videoId: it.contentDetails.videoId, title: it.snippet.title, date: it.contentDetails.videoPublishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }, playlistContext));
+                els.playlistVideos.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
             });
 
             els.morePlaylistVideosBtn.classList.toggle('hidden', !state.current.playlistVideosPageToken);
@@ -604,14 +599,12 @@ document.addEventListener('DOMContentLoaded', () => {
         els.sortOptions.classList.remove('hidden');
         els.sortButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
         
-        const searchType = 'video';
         const tabEl = els.videosTab;
         
         showStatus(`Suche nach "${q}"...`);
         tabEl.innerHTML = '';
         try {
-            const query = `"${q}"`;
-            const data = await cachedApi('search', { channelId: state.current.channelId, q: query, type: searchType, part: 'snippet', maxResults: 25, order: state.current.searchOrder });
+            const data = await cachedApi('search', { channelId: state.current.channelId, q: `"${q}"`, type: 'video', part: 'snippet', maxResults: 25, order: state.current.searchOrder });
             const info = await getChannelInfo(state.current.channelId);
             
             let items = (data.items || []).filter(it => it.snippet.thumbnails);
@@ -697,16 +690,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.current.channelId = r.id; 
                 state.current.tab = r.tab || 'videos';
                 els.tabs.forEach(t => {
-                    t.classList.remove('active');
-                    if(t.dataset.tab === state.current.tab) t.classList.add('active');
+                    t.classList.toggle('active', t.dataset.tab === state.current.tab);
                 });
                 const info = await getChannelInfo(r.id);
                 els.channelMeta.textContent = info.title;
 
                 if (info.banner) {
+                    els.channelBannerContainer.classList.remove('hidden');
                     els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
                     els.channelBanner.style.backgroundImage = `url(${info.banner})`;
-                    els.channelBannerContainer.classList.remove('hidden');
                 } else {
                     els.channelBannerContainer.classList.add('hidden');
                 }
@@ -804,7 +796,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 isFirstAuthChangeEvent = false;
                 await initAppLogic();
             } else if (wasLoggedIn !== isLoggedIn) {
-                // If auth state changed (login/logout), re-run the logic
                 await initAppLogic();
             }
         });
