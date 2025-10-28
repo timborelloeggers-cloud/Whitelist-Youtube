@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V4.5 (Optimized)</title>
+  <title>YouTube Whitelist V5.0 (Realtime Sync)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -95,16 +95,10 @@
   <div id="statusBox" class="hidden"></div>
 
   <section id="homeView" class="section">
-    <h2>Deine Lieblingskanäle</h2>
-    <div class="grid cols-channels" id="favoriteChannelGrid"></div>
-    <details>
-        <summary>Weitere Kanäle anzeigen</summary>
-        <div class="details-content">
-            <div class="grid cols-channels" id="otherChannelGrid"></div>
-        </div>
-    </details>
+    <h2>Deine Kanäle</h2>
+    <div class="grid cols-channels" id="channelGrid"></div>
     <div class="section">
-      <h2>Neueste Videos (Favoriten)</h2>
+      <h2>Neueste Videos</h2>
       <div class="grid cols-vids" id="latestVideosGrid"></div>
     </div>
   </section>
@@ -155,13 +149,6 @@
     </div>
     <div class="modal-body">
       <div id="player-mount" class="modal-iframe-container"></div>
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px;">
-          <strong>Vorgeschlagene Videos</strong>
-          <span class="sub" id="suggestSub"></span>
-        </div>
-        <div class="suggest" id="suggestList"></div>
-      </div>
     </div>
   </div>
 </div>
@@ -189,49 +176,36 @@ document.addEventListener('DOMContentLoaded', () => {
       appId: "1:747410045455:web:805ede68f0aefffae1417a"
     };
     
-    // ========================================================================
-    // HIER KANÄLE UND FAVORITEN EINFACH ANPASSEN
-    // ========================================================================
     const CHANNELS_CONFIG = [
-        // Favoriten
-        { handle: '@jpperformance', isFavorite: true },
-        { handle: '@Autodoktoren', isFavorite: true },
-        { handle: '@BreakingLab', isFavorite: true },
-        { handle: '@Halle77', isFavorite: true },
-        { handle: '@automotorsport', isFavorite: false },
-        { handle: '@MotorenZimmer', isFavorite: false },
-        { handle: '@MrWissen2go', isFavorite: false },
-        { handle: '@veritasium', isFavorite: true },
-        { handle: '@Simplicissimus', isFavorite: true },
-        { handle: '@EngineeringExplained', isFavorite: false },
-        { handle: '@100SekundenPhysik', isFavorite: false },
-        { handle: '@TerraXLeschundCo', isFavorite: false },
-        { handle: '@mndiaye_97', isFavorite: false },
-        { handle: '@2boredguys', isFavorite: true },
+        { handle: '@jpperformance' }, { handle: '@Autodoktoren' },
+        { handle: '@BreakingLab' }, { handle: '@Halle77' },
+        { handle: '@automotorsport' }, { handle: '@MotorenZimmer' },
+        { handle: '@MrWissen2go' }, { handle: '@veritasium' },
+        { handle: '@Simplicissimus' }, { handle: '@EngineeringExplained' },
+        { handle: '@100SekundenPhysik' }, { handle: '@TerraXLeschundCo' },
+        { handle: '@mndiaye_97' }, { handle: '@2boredguys' }
     ];
     
-    // Generate lists from the single config object for easier use in the app
     const ALLOWED_CHANNELS = CHANNELS_CONFIG.map(c => c.handle);
-    const FAVORITE_CHANNEL_HANDLES = CHANNELS_CONFIG.filter(c => c.isFavorite).map(c => c.handle);
-
 
     // ===== STATE & ELEMENTS =====
     const state = {
         user: null, userId: null,
         progressData: new Map(),
+        progressListenerUnsubscribe: null,
         channels: new Map(), 
         current: { 
             channelId: null, tab: 'videos', videosPageToken: null, 
             playlistsPageToken: null, playlistVideosPageToken: null,
             searchQuery: null, searchOrder: 'date',
-            player: null, playerStateInterval: null
+            player: null, playerStateInterval: null, playingVideoId: null,
         },
-        lastChannelRoute: null, playlistContext: { playlistId: null, channelId: null, title: null }
+        lastChannelRoute: null,
     };
     const els = {
         statusBox: document.getElementById('statusBox'), homeView: document.getElementById('homeView'), channelView: document.getElementById('channelView'),
-        playlistView: document.getElementById('playlistView'), favoriteChannelGrid: document.getElementById('favoriteChannelGrid'),
-        otherChannelGrid: document.getElementById('otherChannelGrid'), latestVideosGrid: document.getElementById('latestVideosGrid'),
+        playlistView: document.getElementById('playlistView'), channelGrid: document.getElementById('channelGrid'),
+        latestVideosGrid: document.getElementById('latestVideosGrid'),
         tabs: document.querySelectorAll('.tab'), videosTab: document.getElementById('videosTab'), playlistsTab: document.getElementById('playlistsTab'),
         moreVideosBtn: document.getElementById('moreVideosBtn'), morePlaylistsBtn: document.getElementById('morePlaylistsBtn'),
         searchInput: document.getElementById('searchInput'), searchBtn: document.getElementById('searchBtn'),
@@ -240,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
         channelBanner: document.getElementById('channelBanner'), channelMeta: document.getElementById('channelMeta'),
         overlay: document.getElementById('playerOverlay'), playerClose: document.getElementById('playerClose'),
         playerMount: document.getElementById('player-mount'), playerTitle: document.getElementById('playerTitle'),
-        suggestList: document.getElementById('suggestList'), suggestSub: document.getElementById('suggestSub'),
         playlistTitle: document.getElementById('playlistTitle'), playlistVideos: document.getElementById('playlistVideos'),
         morePlaylistVideosBtn: document.getElementById('morePlaylistVideosBtn'), backBtn: document.getElementById('backBtn'),
         homeBtn: document.getElementById('homeBtn'), forwardBtn: document.getElementById('forwardBtn'),
@@ -260,11 +233,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const fmtDate = s => new Date(s).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
     
     const formatDuration = (seconds) => {
-        if (seconds === undefined || seconds === null || seconds < 0) return '';
+        if (!seconds) return '';
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         const s = Math.floor(seconds % 60);
-        const pad = (n) => n.toString().padStart(2, '0');
+        const pad = n => n.toString().padStart(2, '0');
         return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
     };
 
@@ -272,25 +245,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!duration) return 0;
         const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
         if (!match) return 0;
-        const hours = (parseInt(match[1]) || 0);
-        const minutes = (parseInt(match[2]) || 0);
-        const seconds = (parseInt(match[3]) || 0);
-        return hours * 3600 + minutes * 60 + seconds;
+        return (parseInt(match[1]) || 0) * 3600 + (parseInt(match[2]) || 0) * 60 + (parseInt(match[3]) || 0);
     };
     
     // ===== API & CACHING =====
     const cacheSet = (key, value, ttlMinutes = 30) => {
-        const now = new Date();
-        const item = { value, expiry: now.getTime() + ttlMinutes * 60 * 1000 };
-        try {
-            sessionStorage.setItem(key, JSON.stringify(item));
-        } catch(e) { console.warn("Could not write to sessionStorage:", e); }
+        const item = { value, expiry: Date.now() + ttlMinutes * 60 * 1000 };
+        try { sessionStorage.setItem(key, JSON.stringify(item)); } catch(e) { console.warn("Could not write to sessionStorage:", e); }
     };
     const cacheGet = (key) => {
         const itemStr = sessionStorage.getItem(key);
         if (!itemStr) return null;
         const item = JSON.parse(itemStr);
-        if (new Date().getTime() > item.expiry) {
+        if (Date.now() > item.expiry) {
             sessionStorage.removeItem(key);
             return null;
         }
@@ -322,15 +289,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== RENDERERS =====
     const renderChannelCard = (info, handle) => {
         const card = createEl('div', 'chan-card');
-        card.dataset.handle = handle;
         card.innerHTML = `<div class="chan-thumb"><img src="${info.thumb}" alt=""></div><div class="chan-meta"><div class="chan-title">${info.title}</div><div class="sub">Kanal öffnen</div></div>`;
         card.addEventListener('click', () => navigate(`channel/${info.id}/videos`)); return card;
     };
-    const videoCard = (v, context = {}) => {
+    const videoCard = (v) => {
         const card = createEl('div', 'video-card');
+        card.dataset.videoId = v.videoId;
+        
         const progress = state.progressData.get(v.videoId);
         let progressPercent = 0;
-        if (progress && progress.duration > 0) {
+        if (progress?.duration > 0) {
             progressPercent = Math.min((progress.currentTime / progress.duration) * 100, 100);
         }
 
@@ -349,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span>${formatDuration(v.durationSeconds)}</span>
                 </div>
             </div>`;
-        card.addEventListener('click', () => openPlayer(v.videoId, v.title, context)); 
+        card.addEventListener('click', () => openPlayer(v.videoId, v.title)); 
         return card;
     };
     const playlistCard = (p) => {
@@ -357,27 +325,46 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta"><span>${p.channelTitle || 'Playlist'}</span></div></div>`;
         card.addEventListener('click', () => openPlaylist(p.playlistId, p.channelId, p.title)); return card;
     };
+    const updateAllProgressBars = () => {
+        document.querySelectorAll('.video-card').forEach(card => {
+            const videoId = card.dataset.videoId;
+            if (!videoId) return;
+            
+            const progress = state.progressData.get(videoId);
+            let progressPercent = 0;
+            if (progress?.duration > 0) {
+                progressPercent = Math.min((progress.currentTime / progress.duration) * 100, 100);
+            }
+            const bar = card.querySelector('.progress-bar');
+            if (bar) bar.style.width = `${progressPercent}%`;
+        });
+    };
 
     // ===== DATA FETCHING & DATABASE =====
     const saveProgress = (videoId, currentTime, duration) => {
         if (!state.userId || !videoId || !isFinite(currentTime) || !isFinite(duration)) return;
-        const progressRef = db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId);
         const data = { 
             currentTime: Math.round(currentTime), 
             duration: Math.round(duration), 
             lastWatched: firebase.firestore.FieldValue.serverTimestamp()
         };
-        progressRef.set(data, { merge: true });
+        db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set(data, { merge: true });
         state.progressData.set(videoId, data);
     };
 
-    const fetchAllProgress = async () => {
+    const setupProgressListener = () => {
+        if (state.progressListenerUnsubscribe) state.progressListenerUnsubscribe();
         if (!state.userId) return;
-        state.progressData.clear();
-        const progressSnap = await db.collection('users').doc(state.userId).collection('videoProgress').get();
-        progressSnap.forEach(doc => {
-            state.progressData.set(doc.id, doc.data());
-        });
+
+        state.progressListenerUnsubscribe = db.collection('users').doc(state.userId).collection('videoProgress')
+            .onSnapshot(snapshot => {
+                const newProgress = new Map();
+                snapshot.forEach(doc => newProgress.set(doc.id, doc.data()));
+                state.progressData = newProgress;
+                updateAllProgressBars();
+            }, error => {
+                console.error("Fehler beim Abhören des Fortschritts:", error);
+            });
     };
     
     const getChannelInfo = async (identifier) => {
@@ -399,18 +386,11 @@ document.addEventListener('DOMContentLoaded', () => {
                          || c.brandingSettings?.image?.bannerTabletImageUrl
                          || c.brandingSettings?.image?.bannerMobileImageUrl
                          || c.brandingSettings?.image?.bannerExternalUrl;
-        
-        if (banner) {
-            banner = banner.replace(/=w\d+/, '=w2560');
-        }
+        if (banner) banner = banner.replace(/=w\d+/, '=w2560');
 
         const info = { 
-            id: c.id, 
-            title: c.snippet?.title || '?', 
-            thumb: c.snippet?.thumbnails?.default?.url, 
-            uploadsId: c.contentDetails?.relatedPlaylists?.uploads,
-            banner: banner,
-            handle: identifier
+            id: c.id, title: c.snippet?.title || '?', thumb: c.snippet?.thumbnails?.default?.url, 
+            uploadsId: c.contentDetails?.relatedPlaylists?.uploads, banner: banner, handle: identifier
         };
         state.channels.set(identifier, info);
         state.channels.set(info.id, info);
@@ -419,30 +399,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const enrichVideosWithDuration = async (items, idKey) => {
         if (!items || items.length === 0) return [];
-
         const getVideoId = (item, key) => {
-            if (key === 'contentDetails') return item.contentDetails?.videoId;
             if (key === 'id') return item.id?.videoId;
             if (key === 'snippet') return item.snippet?.resourceId?.videoId;
             return null;
         };
-
         const allVideoIds = items.map(it => getVideoId(it, idKey)).filter(Boolean);
-
         if (allVideoIds.length === 0) return [];
 
         const durationMap = new Map();
-        const CHUNK_SIZE = 50;
-
-        for (let i = 0; i < allVideoIds.length; i += CHUNK_SIZE) {
-            const chunk = allVideoIds.slice(i, i + CHUNK_SIZE);
-            const videoData = await cachedApi('videos', {
-                id: chunk.join(','),
-                part: 'contentDetails'
-            });
-            videoData.items.forEach(v => {
-                durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration));
-            });
+        for (let i = 0; i < allVideoIds.length; i += 50) {
+            const chunk = allVideoIds.slice(i, i + 50);
+            const videoData = await cachedApi('videos', { id: chunk.join(','), part: 'contentDetails' });
+            videoData.items.forEach(v => durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration)));
         }
         
         return items
@@ -450,72 +419,43 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(item => item.durationSeconds > 120);
     };
 
-    // ========================================================================
-    // NEUE, HOCHEFFIZIENTE LOGIK FÜR DIE STARTSEITE
-    // ========================================================================
     const buildHome = async () => {
         showStatus('Lade Kanäle und neueste Videos...');
-        els.favoriteChannelGrid.innerHTML = ''; els.otherChannelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
+        els.channelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
         
-        // Render all channel cards first
         const infoPromises = ALLOWED_CHANNELS.map(handle => getChannelInfo(handle));
         const infoResults = await Promise.allSettled(infoPromises);
         const successfulChannels = [];
-        infoResults.forEach((result, index) => {
+        infoResults.forEach(result => {
             if (result.status === 'fulfilled' && result.value) {
-                const handle = ALLOWED_CHANNELS[index];
                 successfulChannels.push(result.value);
-                const card = renderChannelCard(result.value, handle);
-                if (FAVORITE_CHANNEL_HANDLES.includes(handle)) {
-                    els.favoriteChannelGrid.appendChild(card);
-                } else {
-                    els.otherChannelGrid.appendChild(card);
-                }
+                els.channelGrid.appendChild(renderChannelCard(result.value));
             } else { console.error("Konnte Kanal-Info nicht laden:", result.reason); }
         });
         
-        const favoriteChannelInfos = successfulChannels.filter(info => 
-            FAVORITE_CHANNEL_HANDLES.includes(info.handle)
-        );
-
-        if (favoriteChannelInfos.length > 0) {
-            // Step 1: Fetch ONLY the single latest video item for each favorite channel.
-            const latestVideoItemPromises = favoriteChannelInfos.map(info =>
-                cachedApi('playlistItems', {
-                    playlistId: info.uploadsId,
-                    maxResults: 1,
-                    part: 'snippet'
-                }).then(data => ({ ...data, channelTitle: info.title }))
+        if (successfulChannels.length > 0) {
+            const latestVideoItemPromises = successfulChannels.map(info =>
+                cachedApi('playlistItems', { playlistId: info.uploadsId, maxResults: 1, part: 'snippet' })
+                    .then(data => ({ ...data, channelTitle: info.title }))
             );
             const results = await Promise.allSettled(latestVideoItemPromises);
-
             const latestItems = results
-                .filter(r => r.status === 'fulfilled' && r.value.items && r.value.items.length > 0)
+                .filter(r => r.status === 'fulfilled' && r.value.items?.length > 0)
                 .map(r => ({ ...r.value.items[0], channelTitle: r.value.channelTitle }));
 
             if (latestItems.length > 0) {
-                 // Step 2: Make ONE efficient API call to get durations for these few videos.
-                const videoIds = latestItems.map(item => item.snippet.resourceId.videoId);
                 const enrichedItems = await enrichVideosWithDuration(latestItems, 'snippet');
-
                 const allVideos = enrichedItems.map(it => ({
-                    videoId: it.snippet.resourceId.videoId,
-                    title: it.snippet.title,
-                    date: it.snippet.publishedAt,
-                    thumb: it.snippet.thumbnails?.medium?.url,
-                    channelId: it.snippet.channelId,
-                    channelTitle: it.channelTitle,
+                    videoId: it.snippet.resourceId.videoId, title: it.snippet.title,
+                    date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url,
+                    channelId: it.snippet.channelId, channelTitle: it.channelTitle,
                     durationSeconds: it.durationSeconds
                 }));
-                
                 allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
                 allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v)));
-
             } else {
-                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine neuen Videos bei Favoriten gefunden.</div>`;
+                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Videos gefunden.</div>`;
             }
-        } else {
-             els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Favoriten-Kanäle konfiguriert.</div>`;
         }
         hideStatus();
     };
@@ -546,13 +486,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (reset) tabEl.innerHTML = '';
 
             let items = (data.items || []).filter(it => it.snippet?.thumbnails);
-            if (isVideos) {
-                items = await enrichVideosWithDuration(items, 'snippet');
-            }
-
+            if (isVideos) items = await enrichVideosWithDuration(items, 'snippet');
+            
             items.forEach(it => {
                 if (isVideos) {
-                    tabEl.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }, { channelId: info.id }));
+                    tabEl.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
                 } else {
                     tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
                 }
@@ -566,15 +504,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (reset) { state.current.playlistVideosPageToken = null; els.playlistVideos.innerHTML = ''; }
         showStatus('Lade Playlist-Inhalte...', false);
         try {
-            const info = await getChannelInfo(state.playlistContext.channelId);
-            const data = await cachedApi('playlistItems', { playlistId: state.playlistContext.playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet' });
+            const { playlistId, channelId } = state.current.playlistContext;
+            const info = await getChannelInfo(channelId);
+            const data = await cachedApi('playlistItems', { playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet' });
             state.current.playlistVideosPageToken = data.nextPageToken || null;
             
             const enrichedVideos = await enrichVideosWithDuration(data.items || [], 'snippet');
             enrichedVideos.forEach(it => {
                 els.playlistVideos.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
             });
-
             els.morePlaylistVideosBtn.classList.toggle('hidden', !state.current.playlistVideosPageToken);
             hideStatus();
         } catch(e) { showStatus(`Fehler beim Laden der Playlist: ${e.message}`, true); }
@@ -585,88 +523,74 @@ document.addEventListener('DOMContentLoaded', () => {
         state.current.searchQuery = q;
         if (!q) {
             els.sortOptions.classList.add('hidden');
-            showChannelContent(state.current.tab, { reset: true });
-            return;
+            return showChannelContent(state.current.tab, { reset: true });
         }
-
-        els.moreVideosBtn.classList.add('hidden');
-        els.morePlaylistsBtn.classList.add('hidden');
         els.sortOptions.classList.remove('hidden');
         els.sortButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
         
-        const tabEl = els.videosTab;
-        
         showStatus(`Suche nach "${q}"...`);
-        tabEl.innerHTML = '';
+        els.videosTab.innerHTML = '';
         try {
             const data = await cachedApi('search', { channelId: state.current.channelId, q: `"${q}"`, type: 'video', part: 'snippet', maxResults: 25, order: state.current.searchOrder });
             const info = await getChannelInfo(state.current.channelId);
-            
-            let items = (data.items || []).filter(it => it.snippet.thumbnails);
-            items = await enrichVideosWithDuration(items, 'id');
-
+            let items = await enrichVideosWithDuration(data.items || [], 'id');
             items.forEach(it => {
-                tabEl.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }, { channelId: state.current.channelId }));
+                els.videosTab.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
             });
             hideStatus();
         } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
     };
 
     // ===== NAVIGATION & ROUTING =====
-    const navigate = (hash) => { window.location.hash = hash; };
+    const navigate = hash => window.location.hash = hash;
     const parseRoute = () => {
-        const h = window.location.hash.slice(1); if(!h) return {view: 'home'}; const parts = h.split('/');
-        return { view: parts[0], id: parts[1], tab: parts[2], title: parts[3] ? decodeURIComponent(parts[3]) : null };
+        const h = window.location.hash.slice(1);
+        if(!h) return {view: 'home'};
+        const parts = h.split('/');
+        return { view: parts[0], id: parts[1], tab: parts[2] };
     };
-    const setView = (name) => {
-        els.homeView.classList.toggle('hidden', name !== 'home');
-        els.channelView.classList.toggle('hidden', name !== 'channel');
-        els.playlistView.classList.toggle('hidden', name !== 'playlist');
+    const setView = name => {
+        Object.values(els).forEach(el => {
+            if (el.id?.endsWith('View')) el.classList.add('hidden');
+        });
+        els[`${name}View`].classList.remove('hidden');
     };
-    const backToChannel = () => {
-        if(state.lastChannelRoute) navigate(state.lastChannelRoute);
-        else if(state.current.channelId) navigate(`channel/${state.current.channelId}/playlists`);
-        else navigate('home');
-    };
-    const openPlayer = (videoId, title, context) => {
+    
+    const openPlayer = (videoId, title) => {
         els.playerTitle.textContent = title || 'Video';
         els.overlay.classList.add('show');
-        
+        state.current.playingVideoId = videoId;
         const progress = state.progressData.get(videoId);
-        const startSeconds = progress ? progress.currentTime : 0;
-
+        
         state.current.player = new YT.Player('player-mount', {
             height: '100%', width: '100%', videoId: videoId,
-            playerVars: { 'playsinline': 1, 'autoplay': 1, 'rel': 0, 'start': startSeconds },
+            playerVars: { 'playsinline': 1, 'autoplay': 1, 'rel': 0, 'start': progress?.currentTime || 0 },
             events: { 'onStateChange': onPlayerStateChange }
         });
     };
     
-    const onPlayerStateChange = (event) => {
+    const onPlayerStateChange = event => {
+        clearInterval(state.current.playerStateInterval);
+        if (event.data !== YT.PlayerState.PLAYING) return;
+        
         const player = event.target;
         const videoId = player.getVideoData().video_id;
-
-        if (event.data == YT.PlayerState.PLAYING) {
-            clearInterval(state.current.playerStateInterval);
-            state.current.playerStateInterval = setInterval(() => {
-                const currentTime = player.getCurrentTime();
-                const duration = player.getDuration();
-                if (currentTime > 0 && duration > 0) {
-                    saveProgress(videoId, currentTime, duration);
-                }
-            }, 5000);
-        } else {
-            clearInterval(state.current.playerStateInterval);
-        }
+        state.current.playerStateInterval = setInterval(() => {
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+            if (currentTime > 0 && duration > 0) {
+                saveProgress(videoId, currentTime, duration);
+            }
+        }, 5000);
     };
 
     const closePlayer = () => {
         clearInterval(state.current.playerStateInterval);
-        if (state.current.player && typeof state.current.player.destroy === 'function') {
-            state.current.player.destroy();
-        }
+        if (state.current.player?.destroy) state.current.player.destroy();
         state.current.player = null;
         els.overlay.classList.remove('show');
+        updateAllProgressBars();
+        state.current.playingVideoId = null;
     };
     const openPlaylist = (playlistId, channelId, title) => {
         state.lastChannelRoute = `channel/${channelId}/playlists`;
@@ -677,33 +601,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const r = parseRoute();
         hideStatus();
         try {
-            if (r.view === 'home' || !r.view) {
+            if (r.view === 'home') {
                 setView('home');
                 await buildHome();
             } else if (r.view === 'channel' && r.id) {
                 setView('channel'); 
                 state.current.channelId = r.id; 
                 state.current.tab = r.tab || 'videos';
-                els.tabs.forEach(t => {
-                    t.classList.toggle('active', t.dataset.tab === state.current.tab);
-                });
+                els.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === state.current.tab));
                 const info = await getChannelInfo(r.id);
                 els.channelMeta.textContent = info.title;
-
+                els.channelBannerContainer.classList.toggle('hidden', !info.banner);
                 if (info.banner) {
-                    els.channelBannerContainer.classList.remove('hidden');
                     els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
                     els.channelBanner.style.backgroundImage = `url(${info.banner})`;
-                } else {
-                    els.channelBannerContainer.classList.add('hidden');
                 }
                 await showChannelContent(state.current.tab, { reset: true });
             } else if (r.view === 'playlist' && r.id) {
                 setView('playlist'); 
                 const [playlistId, channelId] = r.id.split(':');
-                state.playlistContext = { playlistId, channelId, title: r.title || 'Playlist' };
-                els.playlistTitle.textContent = state.playlistContext.title;
+                state.current.playlistContext = { playlistId, channelId };
                 await renderPlaylistVideos({ reset: true });
+            } else {
+                navigate('home');
             }
         } catch (e) {
             console.error(`Fehler bei Navigation zu #${window.location.hash}:`, e);
@@ -717,81 +637,54 @@ document.addEventListener('DOMContentLoaded', () => {
         els.homeBtn.addEventListener('click', () => navigate('home'));
         els.backBtn.addEventListener('click', () => history.back());
         els.forwardBtn.addEventListener('click', () => history.forward());
-        els.backToChannelBtn.addEventListener('click', backToChannel);
+        els.backToChannelBtn.addEventListener('click', () => state.lastChannelRoute ? navigate(state.lastChannelRoute) : navigate('home'));
         els.playerClose.addEventListener('click', closePlayer);
         els.overlay.addEventListener('click', e => { if (e.target === els.overlay) closePlayer(); });
-        els.tabs.forEach(btn => {
-            btn.addEventListener('click', () => { 
-                if (state.current.channelId) {
-                    navigate(`channel/${state.current.channelId}/${btn.dataset.tab}`);
-                }
-            });
-        });
+        els.tabs.forEach(btn => btn.addEventListener('click', () => navigate(`channel/${state.current.channelId}/${btn.dataset.tab}`)));
         els.moreVideosBtn.addEventListener('click', () => showChannelContent('videos', { reset: false }));
         els.morePlaylistsBtn.addEventListener('click', () => showChannelContent('playlists', { reset: false }));
         els.morePlaylistVideosBtn.addEventListener('click', () => renderPlaylistVideos({ reset: false }));
-        
-        els.searchBtn.addEventListener('click', () => searchInChannel());
+        els.searchBtn.addEventListener('click', searchInChannel);
         els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInChannel(); });
-        els.sortButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                state.current.searchOrder = btn.dataset.sort;
-                searchInChannel();
-            });
-        });
+        els.sortButtons.forEach(btn => btn.addEventListener('click', () => {
+            state.current.searchOrder = btn.dataset.sort;
+            searchInChannel();
+        }));
     };
 
     // ===== APP INITIALIZATION & AUTH =====
-    const initAppLogic = async () => {
-        setupEventListeners();
-        if(state.userId) {
-            await fetchAllProgress();
-        }
-        await handleRoute();
-    };
-    
-    const handleAuth = () => {
-        if (state.user) { // Logout
-            auth.signOut();
-        } else { // Login
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => {
-                console.error("Login fehlgeschlagen:", error);
-                showStatus("Anmeldung mit Google ist fehlgeschlagen.", true);
-            });
-        }
-    };
-
-    const updateUIForAuthState = (user) => {
-        if (user) {
-            state.user = user;
-            state.userId = user.uid;
-            els.authBtn.textContent = 'Abmelden';
-            els.userAvatar.src = user.photoURL;
-            els.userAvatar.classList.remove('hidden');
-        } else {
-            state.user = null;
-            state.userId = null;
-            state.progressData.clear();
-            els.authBtn.textContent = 'Anmelden';
-            els.userAvatar.classList.add('hidden');
-        }
-    };
-
     const initAuth = () => {
-        let isFirstAuthChangeEvent = true;
-        els.authBtn.addEventListener('click', handleAuth);
-        auth.onAuthStateChanged(async (user) => {
-            const wasLoggedIn = !!state.user;
-            const isLoggedIn = !!user;
-            
-            updateUIForAuthState(user);
+        els.authBtn.addEventListener('click', () => {
+            if (state.user) {
+                auth.signOut();
+            } else {
+                auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(error => {
+                    console.error("Login fehlgeschlagen:", error);
+                    showStatus("Anmeldung mit Google ist fehlgeschlagen.", true);
+                });
+            }
+        });
 
-            if(isFirstAuthChangeEvent) {
-                isFirstAuthChangeEvent = false;
-                await initAppLogic();
-            } else if (wasLoggedIn !== isLoggedIn) {
-                await initAppLogic();
+        auth.onAuthStateChanged(user => {
+            const isLoggedIn = !!user;
+            const wasLoggedIn = !!state.user;
+            
+            state.user = user;
+            state.userId = user?.uid || null;
+            els.authBtn.textContent = isLoggedIn ? 'Abmelden' : 'Anmelden';
+            els.userAvatar.classList.toggle('hidden', !isLoggedIn);
+            if (isLoggedIn) els.userAvatar.src = user.photoURL;
+
+            if (isLoggedIn) {
+                setupProgressListener();
+            } else {
+                if (state.progressListenerUnsubscribe) state.progressListenerUnsubscribe();
+                state.progressData.clear();
+            }
+            
+            if (isLoggedIn !== wasLoggedIn) {
+                setupEventListeners();
+                handleRoute();
             }
         });
     };
