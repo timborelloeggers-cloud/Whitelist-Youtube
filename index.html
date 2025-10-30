@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V6.1 (Compliance)</title>
+  <title>YouTube Whitelist V6.2 (Fixed)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -151,7 +151,7 @@
     <div id="playlistVideos" class="grid cols-vids" style="margin-top: 14px;"></div>
     <button id="morePlaylistVideosBtn" class="loadmore hidden">Mehr laden</button>
   </section>
-
+  
   <section id="privacyView" class="section text-page hidden">
     <h2>Datenschutzerklärung</h2>
     <p>Stand: 30. Oktober 2025</p>
@@ -166,7 +166,7 @@
     <h3>Weitergabe von Daten</h3>
     <p>Deine persönlichen Daten, insbesondere dein Videofortschritt, werden nicht mit internen oder externen Dritten geteilt, verkauft oder anderweitig offengelegt. Wir erlauben keinen Drittanbietern, auf deine Daten zuzugreifen oder diese zu sammeln.</p>
     <h3>Kontakt</h3>
-    <p>Bei Fragen zum Datenschutz erreichst du uns unter: <strong>timborelloeggers@gmail.com</strong></p>
+    <p>Bei Fragen zum Datenschutz erreichst du uns unter: <strong>[DEINE E-MAIL-ADRESSE HIER]</strong></p>
   </section>
 
   <section id="termsView" class="section text-page hidden">
@@ -508,8 +508,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     await fetchAndRenderHome();
                 }
             } else if (r.view === 'channel' && r.id) {
-                // Hier kommt deine Logik für die Kanal-Ansicht hin
                 setView('channel'); 
+                state.current.channelId = r.id; 
+                state.current.tab = r.tab || 'videos';
+                els.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === state.current.tab));
+                const info = await getChannelInfo(r.id);
+                els.channelMeta.textContent = info.title;
+                els.channelBannerContainer.classList.toggle('hidden', !info.banner);
+                if (info.banner) {
+                    els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
+                    els.channelBanner.style.backgroundImage = `url(${info.banner})`;
+                }
+                // HIER WURDE DER AUFRUF ZUM LADEN DES KANAL-INHALTS WIEDER EINGEFÜGT
+                await showChannelContent(state.current.tab, { reset: true });
             } else { 
                 navigate('home'); 
             }
@@ -525,6 +536,15 @@ document.addEventListener('DOMContentLoaded', () => {
         els.forwardBtn.onclick = () => history.forward();
         els.playerClose.onclick = closePlayer;
         els.overlay.onclick = e => { if (e.target === els.overlay) closePlayer(); };
+        els.tabs.forEach(btn => btn.onclick = () => navigate(`channel/${state.current.channelId}/${btn.dataset.tab}`));
+        els.moreVideosBtn.onclick = () => showChannelContent('videos', { reset: false });
+        els.morePlaylistsBtn.onclick = () => showChannelContent('playlists', { reset: false });
+        els.searchBtn.onclick = searchInChannel;
+        els.searchInput.onkeydown = e => { if (e.key === 'Enter') searchInChannel(); };
+        document.querySelectorAll('[data-sort]').forEach(btn => btn.onclick = () => {
+            state.current.searchOrder = btn.dataset.sort;
+            searchInChannel();
+        });
     };
 
     // ===== APP INITIALIZATION & AUTH =====
@@ -548,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.progressData.clear();
                 updateAllProgressBars();
             }
-            if (!!user !== wasLoggedIn || !wasLoggedIn) { // Run on first load and on auth state change
+            if (!!user !== wasLoggedIn || !wasLoggedIn) {
                 handleRoute();
             }
         });
