@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V5.0 (Realtime Sync)</title>
+  <title>YouTube Whitelist V6.1 (Compliance)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -23,7 +23,7 @@
     #userAvatar{width:32px;height:32px;border-radius:50%;}
     .btn{border:none;background:#252525;color:#eee;border:1px solid #2f2f2f;padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem;white-space:nowrap;}
     .btn.active{background:var(--accent);border-color:transparent;color:#fff}
-    main{max-width:1200px;margin:0 auto;padding:12px}
+    main{max-width:1200px;margin:0 auto;padding:12px; padding-bottom: 60px;}
     .section{margin-top:14px}
     .section h2{font-size:1.05rem;margin:.25rem 4px}
     .sub{color:var(--muted);font-size:.9rem}
@@ -63,8 +63,6 @@
     .modal-header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #1f1f1f}
     .modal-body{overflow-y:auto;padding:10px}
     .modal-iframe-container{width:100%;aspect-ratio:16/9;border:0;margin-bottom:10px; background-color: #000;}
-    .suggest{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
-    .suggest .video-card{min-width:220px;}
     #playlistView .pl-head{display:flex;align-items:center;gap:8px;margin:6px 4px}
     #playlistView .pl-title{font-weight:700}
     .loading-msg, .error-msg{ text-align: center; padding: 20px; font-style: italic; color: var(--muted); }
@@ -75,6 +73,13 @@
     summary { cursor: pointer; padding: 1rem; font-weight: bold; }
     summary:hover { background-color: #1f1f1f; }
     .details-content { padding: 0 1rem 1rem 1rem; }
+    footer { text-align: center; padding: 20px 15px; border-top: 1px solid #2a2a2a; margin-top: 20px; }
+    footer a { color: var(--muted); text-decoration: none; margin: 0 10px; font-size: 0.9rem; }
+    footer a:hover { color: var(--text); }
+    .text-page { line-height: 1.6; }
+    .text-page h2 { border-bottom: 1px solid #2a2a2a; padding-bottom: 10px; }
+    .text-page p, .text-page ul { color: var(--muted); }
+    .text-page a { color: var(--accent); }
   </style>
 </head>
 <body>
@@ -83,6 +88,7 @@
   <div class="topbar">
     <button class="btn" id="backBtn">←</button>
     <button class="btn" id="homeBtn">Home</button>
+    <button class="btn" id="refreshBtn">Neu laden 🔄</button>
     <button class="btn" id="forwardBtn">→</button>
     <div class="auth-container">
         <img id="userAvatar" class="hidden" alt="User Avatar">
@@ -95,8 +101,14 @@
   <div id="statusBox" class="hidden"></div>
 
   <section id="homeView" class="section">
-    <h2>Deine Kanäle</h2>
-    <div class="grid cols-channels" id="channelGrid"></div>
+    <h2>Deine Lieblingskanäle</h2>
+    <div class="grid cols-channels" id="favoriteChannelGrid"></div>
+    <details>
+      <summary>Weitere Kanäle anzeigen</summary>
+      <div class="details-content">
+        <div class="grid cols-channels" id="otherChannelGrid"></div>
+      </div>
+    </details>
     <div class="section">
       <h2>Neueste Videos</h2>
       <div class="grid cols-vids" id="latestVideosGrid"></div>
@@ -139,18 +151,47 @@
     <div id="playlistVideos" class="grid cols-vids" style="margin-top: 14px;"></div>
     <button id="morePlaylistVideosBtn" class="loadmore hidden">Mehr laden</button>
   </section>
+
+  <section id="privacyView" class="section text-page hidden">
+    <h2>Datenschutzerklärung</h2>
+    <p>Stand: 30. Oktober 2025</p>
+    <p>Diese Anwendung nutzt die API-Dienste von YouTube. Durch die Nutzung dieser Anwendung stimmst du den Nutzungsbedingungen von YouTube zu.</p>
+    <p>Wir verweisen hiermit auf die Datenschutzerklärung von Google, die unter folgendem Link eingesehen werden kann: <a href="http://www.google.com/policies/privacy" target="_blank" rel="noopener">http://www.google.com/policies/privacy</a>.</p>
+    <h3>Welche Daten wir erheben und warum</h3>
+    <p>Wenn du dich mit deinem Google-Konto anmeldest, speichern wir deine eindeutige Google Nutzer-ID in unserer Firebase-Datenbank. Dies ist notwendig, um deinen persönlichen Videofortschritt zu speichern und über verschiedene Geräte hinweg zu synchronisieren.</p>
+    <ul>
+      <li>Für jedes angesehene Video: die Video-ID, die zuletzt gesehene Zeitposition (in Sekunden) und die Gesamtdauer des Videos.</li>
+      <li>Den Zeitpunkt der letzten Interaktion.</li>
+    </ul>
+    <h3>Weitergabe von Daten</h3>
+    <p>Deine persönlichen Daten, insbesondere dein Videofortschritt, werden nicht mit internen oder externen Dritten geteilt, verkauft oder anderweitig offengelegt. Wir erlauben keinen Drittanbietern, auf deine Daten zuzugreifen oder diese zu sammeln.</p>
+    <h3>Kontakt</h3>
+    <p>Bei Fragen zum Datenschutz erreichst du uns unter: <strong>timborelloeggers@gmail.com</strong></p>
+  </section>
+
+  <section id="termsView" class="section text-page hidden">
+    <h2>Nutzungsbedingungen</h2>
+    <p>Durch die Nutzung dieses Dienstes ("die Anwendung") stimmst du diesen Nutzungsbedingungen zu.</p>
+    <h3>Verbindung zu YouTube</h3>
+    <p>Diese Anwendung nutzt die API-Dienste von YouTube, um Videoinhalte anzuzeigen. Durch die Nutzung der Anwendung stimmst du automatisch auch den <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">Nutzungsbedingungen von YouTube</a> zu.</p>
+  </section>
 </main>
 
+<footer>
+  <a href="#terms">Nutzungsbedingungen</a>
+  <a href="#privacy">Datenschutzerklärung</a>
+</footer>
+
 <div class="overlay" id="playerOverlay" role="dialog">
-  <div class="modal">
-    <div class="modal-header">
-      <strong id="playerTitle">Video</strong>
-      <button class="btn" id="playerClose">Schließen</button>
+    <div class="modal">
+        <div class="modal-header">
+          <strong id="playerTitle">Video</strong>
+          <button class="btn" id="playerClose">Schließen</button>
+        </div>
+        <div class="modal-body">
+          <div id="player-mount" class="modal-iframe-container"></div>
+        </div>
     </div>
-    <div class="modal-body">
-      <div id="player-mount" class="modal-iframe-container"></div>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -177,16 +218,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const CHANNELS_CONFIG = [
-        { handle: '@jpperformance' }, { handle: '@Autodoktoren' },
-        { handle: '@BreakingLab' }, { handle: '@Halle77' },
-        { handle: '@automotorsport' }, { handle: '@MotorenZimmer' },
-        { handle: '@MrWissen2go' }, { handle: '@veritasium' },
-        { handle: '@Simplicissimus' }, { handle: '@EngineeringExplained' },
-        { handle: '@100SekundenPhysik' }, { handle: '@TerraXLeschundCo' },
-        { handle: '@mndiaye_97' }, { handle: '@2boredguys' }
+        { handle: '@jpperformance', isFavorite: true }, { handle: '@Autodoktoren', isFavorite: true },
+        { handle: '@BreakingLab', isFavorite: true }, { handle: '@Halle77', isFavorite: true },
+        { handle: '@veritasium', isFavorite: true }, { handle: '@Simplicissimus', isFavorite: true },
+        { handle: '@2boredguys', isFavorite: true }, { handle: '@automotorsport', isFavorite: false },
+        { handle: '@MotorenZimmer', isFavorite: false }, { handle: '@MrWissen2go', isFavorite: false },
+        { handle: '@EngineeringExplained', isFavorite: false }, { handle: '@100SekundenPhysik', isFavorite: false },
+        { handle: '@TerraXLeschundCo', isFavorite: false }, { handle: '@mndiaye_97', isFavorite: false }
     ];
-    
-    const ALLOWED_CHANNELS = CHANNELS_CONFIG.map(c => c.handle);
 
     // ===== STATE & ELEMENTS =====
     const state = {
@@ -196,28 +235,38 @@ document.addEventListener('DOMContentLoaded', () => {
         channels: new Map(), 
         current: { 
             channelId: null, tab: 'videos', videosPageToken: null, 
-            playlistsPageToken: null, playlistVideosPageToken: null,
-            searchQuery: null, searchOrder: 'date',
-            player: null, playerStateInterval: null, playingVideoId: null,
+            playlistsPageToken: null, player: null, playerStateInterval: null,
         },
         lastChannelRoute: null,
     };
     const els = {
-        statusBox: document.getElementById('statusBox'), homeView: document.getElementById('homeView'), channelView: document.getElementById('channelView'),
-        playlistView: document.getElementById('playlistView'), channelGrid: document.getElementById('channelGrid'),
+        statusBox: document.getElementById('statusBox'), 
+        homeView: document.getElementById('homeView'), 
+        channelView: document.getElementById('channelView'),
+        playlistView: document.getElementById('playlistView'),
+        privacyView: document.getElementById('privacyView'),
+        termsView: document.getElementById('termsView'),
+        favoriteChannelGrid: document.getElementById('favoriteChannelGrid'),
+        otherChannelGrid: document.getElementById('otherChannelGrid'), 
         latestVideosGrid: document.getElementById('latestVideosGrid'),
         tabs: document.querySelectorAll('.tab'), videosTab: document.getElementById('videosTab'), playlistsTab: document.getElementById('playlistsTab'),
         moreVideosBtn: document.getElementById('moreVideosBtn'), morePlaylistsBtn: document.getElementById('morePlaylistsBtn'),
         searchInput: document.getElementById('searchInput'), searchBtn: document.getElementById('searchBtn'),
-        sortOptions: document.getElementById('sortOptions'), sortButtons: document.querySelectorAll('[data-sort]'),
+        sortOptions: document.getElementById('sortOptions'),
         channelBannerContainer: document.getElementById('channelBannerContainer'), channelBannerBackground: document.getElementById('channelBannerBackground'),
         channelBanner: document.getElementById('channelBanner'), channelMeta: document.getElementById('channelMeta'),
-        overlay: document.getElementById('playerOverlay'), playerClose: document.getElementById('playerClose'),
-        playerMount: document.getElementById('player-mount'), playerTitle: document.getElementById('playerTitle'),
+        overlay: document.getElementById('playerOverlay'), 
+        playerClose: document.getElementById('playerClose'),
+        playerMount: document.getElementById('player-mount'), 
+        playerTitle: document.getElementById('playerTitle'),
         playlistTitle: document.getElementById('playlistTitle'), playlistVideos: document.getElementById('playlistVideos'),
-        morePlaylistVideosBtn: document.getElementById('morePlaylistVideosBtn'), backBtn: document.getElementById('backBtn'),
-        homeBtn: document.getElementById('homeBtn'), forwardBtn: document.getElementById('forwardBtn'),
-        backToChannelBtn: document.getElementById('backToChannelBtn'), authBtn: document.getElementById('authBtn'),
+        morePlaylistVideosBtn: document.getElementById('morePlaylistVideosBtn'), 
+        homeBtn: document.getElementById('homeBtn'), 
+        refreshBtn: document.getElementById('refreshBtn'), 
+        backBtn: document.getElementById('backBtn'),
+        forwardBtn: document.getElementById('forwardBtn'),
+        backToChannelBtn: document.getElementById('backToChannelBtn'),
+        authBtn: document.getElementById('authBtn'),
         userAvatar: document.getElementById('userAvatar'),
     };
     
@@ -229,9 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== UTILS & HELPERS =====
     const showStatus = (message, isError = false) => { els.statusBox.textContent = message; els.statusBox.className = isError ? 'error' : 'loading'; };
     const hideStatus = () => { els.statusBox.className = 'hidden'; };
-    const createEl = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
     const fmtDate = s => new Date(s).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
-    
     const formatDuration = (seconds) => {
         if (!seconds) return '';
         const h = Math.floor(seconds / 3600);
@@ -240,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const pad = n => n.toString().padStart(2, '0');
         return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
     };
-
     const parseISO8601Duration = (duration) => {
         if (!duration) return 0;
         const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
@@ -248,93 +294,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return (parseInt(match[1]) || 0) * 3600 + (parseInt(match[2]) || 0) * 60 + (parseInt(match[3]) || 0);
     };
     
-    // ===== API & CACHING =====
-    const cacheSet = (key, value, ttlMinutes = 30) => {
-        const item = { value, expiry: Date.now() + ttlMinutes * 60 * 1000 };
-        try { sessionStorage.setItem(key, JSON.stringify(item)); } catch(e) { console.warn("Could not write to sessionStorage:", e); }
-    };
-    const cacheGet = (key) => {
-        const itemStr = sessionStorage.getItem(key);
-        if (!itemStr) return null;
-        const item = JSON.parse(itemStr);
-        if (Date.now() > item.expiry) {
-            sessionStorage.removeItem(key);
-            return null;
-        }
-        return item.value;
-    };
-
-    const cachedApi = async (path, params = {}) => {
-        const cacheKey = `yt_api:${path}_${JSON.stringify(params)}`;
-        const cachedData = cacheGet(cacheKey);
-        if (cachedData) return cachedData;
-
-        const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
-        params.key = YOUTUBE_API_KEY; 
-        Object.entries(params).forEach(([k, v]) => v != null && url.searchParams.set(k, v));
-        const res = await fetch(url);
-        if (!res.ok) {
-            const errorData = await res.json();
-            const reason = errorData.error?.errors?.[0]?.reason || 'unknownError';
-            console.error('API Error Response:', errorData);
-            let userMessage = `API Fehler (${res.status}): ${reason}.`;
-            if (reason === 'quotaExceeded') userMessage = 'Das tägliche API-Kontingent (Quota) wurde überschritten.';
-            throw new Error(userMessage);
-        }
-        const data = await res.json();
-        cacheSet(cacheKey, data);
-        return data;
-    };
-    
     // ===== RENDERERS =====
-    const renderChannelCard = (info, handle) => {
-        const card = createEl('div', 'chan-card');
+    const renderChannelCard = (info, isFavorite) => {
+        const card = document.createElement('div');
+        card.className = 'chan-card';
         card.innerHTML = `<div class="chan-thumb"><img src="${info.thumb}" alt=""></div><div class="chan-meta"><div class="chan-title">${info.title}</div><div class="sub">Kanal öffnen</div></div>`;
-        card.addEventListener('click', () => navigate(`channel/${info.id}/videos`)); return card;
+        card.onclick = () => navigate(`channel/${info.id}/videos`);
+        (isFavorite ? els.favoriteChannelGrid : els.otherChannelGrid).appendChild(card);
     };
+
     const videoCard = (v) => {
-        const card = createEl('div', 'video-card');
+        const card = document.createElement('div');
+        card.className = 'video-card';
         card.dataset.videoId = v.videoId;
         
         const progress = state.progressData.get(v.videoId);
-        let progressPercent = 0;
-        if (progress?.duration > 0) {
-            progressPercent = Math.min((progress.currentTime / progress.duration) * 100, 100);
-        }
+        let progressPercent = progress?.duration > 0 ? Math.min((progress.currentTime / progress.duration) * 100, 100) : 0;
 
         card.innerHTML = `
             <div class="thumb">
                 <img loading="lazy" src="${v.thumb || ''}" alt="">
                 ${v.date ? `<span class="chip">${fmtDate(v.date)}</span>` : ''}
-                <div class="progress-bar-container">
-                    <div class="progress-bar" style="width: ${progressPercent}%"></div>
-                </div>
+                <div class="progress-bar-container"><div class="progress-bar" style="width: ${progressPercent}%"></div></div>
             </div>
             <div class="card-body">
                 <div class="title">${v.title || '?'}</div>
-                <div class="meta">
-                    <span>${v.channelTitle || 'Video'}</span>
-                    <span>${formatDuration(v.durationSeconds)}</span>
-                </div>
+                <div class="meta"><span>${v.channelTitle || 'Video'}</span><span>${formatDuration(v.durationSeconds)}</span></div>
             </div>`;
-        card.addEventListener('click', () => openPlayer(v.videoId, v.title)); 
+        card.onclick = () => openPlayer(v.videoId, v.title); 
         return card;
     };
-    const playlistCard = (p) => {
-        const card = createEl('div', 'video-card');
-        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta"><span>${p.channelTitle || 'Playlist'}</span></div></div>`;
-        card.addEventListener('click', () => openPlaylist(p.playlistId, p.channelId, p.title)); return card;
-    };
+
     const updateAllProgressBars = () => {
-        document.querySelectorAll('.video-card').forEach(card => {
+        document.querySelectorAll('.video-card[data-video-id]').forEach(card => {
             const videoId = card.dataset.videoId;
-            if (!videoId) return;
-            
             const progress = state.progressData.get(videoId);
-            let progressPercent = 0;
-            if (progress?.duration > 0) {
-                progressPercent = Math.min((progress.currentTime / progress.duration) * 100, 100);
-            }
+            const progressPercent = progress?.duration > 0 ? Math.min((progress.currentTime / progress.duration) * 100, 100) : 0;
             const bar = card.querySelector('.progress-bar');
             if (bar) bar.style.width = `${progressPercent}%`;
         });
@@ -349,7 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
             lastWatched: firebase.firestore.FieldValue.serverTimestamp()
         };
         db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set(data, { merge: true });
-        state.progressData.set(videoId, data);
     };
 
     const setupProgressListener = () => {
@@ -358,40 +352,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         state.progressListenerUnsubscribe = db.collection('users').doc(state.userId).collection('videoProgress')
             .onSnapshot(snapshot => {
-                const newProgress = new Map();
-                snapshot.forEach(doc => newProgress.set(doc.id, doc.data()));
-                state.progressData = newProgress;
+                snapshot.docChanges().forEach(change => state.progressData.set(change.doc.id, change.doc.data()));
                 updateAllProgressBars();
-            }, error => {
-                console.error("Fehler beim Abhören des Fortschritts:", error);
-            });
+            }, console.error);
     };
     
     const getChannelInfo = async (identifier) => {
-        if (state.channels.has(identifier) && state.channels.get(identifier).banner) {
-             return state.channels.get(identifier);
-        }
-        let channelId = identifier;
-        if (identifier.startsWith('@')) {
-            const searchData = await cachedApi('search', { q: identifier, type: 'channel', part: 'snippet', maxResults: 1 });
-            const searchResult = searchData.items?.[0];
-            if (!searchResult) throw new Error(`Kanal-Handle '${identifier}' nicht gefunden.`);
-            channelId = searchResult.snippet.channelId;
-        }
+        if (state.channels.has(identifier)?.banner) return state.channels.get(identifier);
         
-        const data = await cachedApi('channels', { id: channelId, part: 'snippet,contentDetails,brandingSettings' });
-        const c = data.items?.[0]; if (!c) throw new Error('Kanal-Info für ID: ' + channelId + ' nicht gefunden.');
+        const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${identifier}&type=channel&maxResults=1&key=${YOUTUBE_API_KEY}`);
+        if (!searchRes.ok) throw new Error('API-Fehler bei Kanalsuche');
+        const searchData = await searchRes.json();
+        const channelId = searchData.items?.[0]?.snippet?.channelId;
+        if (!channelId) throw new Error(`Kanal-Handle '${identifier}' nicht gefunden.`);
         
-        let banner = c.brandingSettings?.image?.bannerTvImageUrl 
-                         || c.brandingSettings?.image?.bannerTabletImageUrl
-                         || c.brandingSettings?.image?.bannerMobileImageUrl
-                         || c.brandingSettings?.image?.bannerExternalUrl;
-        if (banner) banner = banner.replace(/=w\d+/, '=w2560');
-
-        const info = { 
-            id: c.id, title: c.snippet?.title || '?', thumb: c.snippet?.thumbnails?.default?.url, 
-            uploadsId: c.contentDetails?.relatedPlaylists?.uploads, banner: banner, handle: identifier
-        };
+        const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings&id=${channelId}&key=${YOUTUBE_API_KEY}`);
+        if (!channelRes.ok) throw new Error('API-Fehler bei Kanal-Details');
+        const data = await channelRes.json();
+        const c = data.items?.[0];
+        if (!c) throw new Error(`Kanal-Info für ID ${channelId} nicht gefunden.`);
+        
+        const banner = c.brandingSettings?.image?.bannerTvImageUrl?.replace(/=w\d+/, '=w2560');
+        const info = { id: c.id, title: c.snippet?.title, thumb: c.snippet?.thumbnails?.default?.url, uploadsId: c.contentDetails?.relatedPlaylists?.uploads, banner };
         state.channels.set(identifier, info);
         state.channels.set(info.id, info);
         return info;
@@ -399,171 +381,98 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const enrichVideosWithDuration = async (items, idKey) => {
         if (!items || items.length === 0) return [];
-        const getVideoId = (item, key) => {
-            if (key === 'id') return item.id?.videoId;
-            if (key === 'snippet') return item.snippet?.resourceId?.videoId;
-            return null;
-        };
+        const getVideoId = (item, key) => (key === 'id' ? item.id?.videoId : item.snippet?.resourceId?.videoId);
+        
         const allVideoIds = items.map(it => getVideoId(it, idKey)).filter(Boolean);
         if (allVideoIds.length === 0) return [];
 
         const durationMap = new Map();
         for (let i = 0; i < allVideoIds.length; i += 50) {
             const chunk = allVideoIds.slice(i, i + 50);
-            const videoData = await cachedApi('videos', { id: chunk.join(','), part: 'contentDetails' });
-            videoData.items.forEach(v => durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration)));
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${chunk.join(',')}&key=${YOUTUBE_API_KEY}`);
+            if (!res.ok) continue;
+            const data = await res.json();
+            data.items.forEach(v => durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration)));
         }
         
         return items
             .map(item => ({ ...item, durationSeconds: durationMap.get(getVideoId(item, idKey)) || 0 }))
             .filter(item => item.durationSeconds > 120);
     };
-
-    const buildHome = async () => {
-        showStatus('Lade Kanäle und neueste Videos...');
-        els.channelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
-        
-        const infoPromises = ALLOWED_CHANNELS.map(handle => getChannelInfo(handle));
-        const infoResults = await Promise.allSettled(infoPromises);
-        const successfulChannels = [];
-        infoResults.forEach(result => {
-            if (result.status === 'fulfilled' && result.value) {
-                successfulChannels.push(result.value);
-                els.channelGrid.appendChild(renderChannelCard(result.value));
-            } else { console.error("Konnte Kanal-Info nicht laden:", result.reason); }
-        });
-        
-        if (successfulChannels.length > 0) {
-            const latestVideoItemPromises = successfulChannels.map(info =>
-                cachedApi('playlistItems', { playlistId: info.uploadsId, maxResults: 1, part: 'snippet' })
-                    .then(data => ({ ...data, channelTitle: info.title }))
-            );
-            const results = await Promise.allSettled(latestVideoItemPromises);
-            const latestItems = results
-                .filter(r => r.status === 'fulfilled' && r.value.items?.length > 0)
-                .map(r => ({ ...r.value.items[0], channelTitle: r.value.channelTitle }));
-
-            if (latestItems.length > 0) {
-                const enrichedItems = await enrichVideosWithDuration(latestItems, 'snippet');
-                const allVideos = enrichedItems.map(it => ({
-                    videoId: it.snippet.resourceId.videoId, title: it.snippet.title,
-                    date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url,
-                    channelId: it.snippet.channelId, channelTitle: it.channelTitle,
-                    durationSeconds: it.durationSeconds
-                }));
-                allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
-                allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v)));
-            } else {
-                els.latestVideosGrid.innerHTML = `<div class="loading-msg">Keine Videos gefunden.</div>`;
-            }
-        }
-        hideStatus();
-    };
     
-    const showChannelContent = async (type, { reset = true } = {}) => {
-        els.sortOptions.classList.add('hidden');
-        els.searchInput.value = '';
-        state.current.searchQuery = null;
+    // ===== LOCALSTORAGE & HOMEPAGE LOGIC =====
+    const renderHomeFromCache = () => {
+        const cachedData = localStorage.getItem('homeData');
+        if (!cachedData) return false;
 
-        const isVideos = type === 'videos';
-        const tabEl = isVideos ? els.videosTab : els.playlistsTab;
-        const otherTabEl = isVideos ? els.playlistsTab : els.videosTab;
-        const moreBtn = isVideos ? els.moreVideosBtn : els.morePlaylistsBtn;
-        
-        els.moreVideosBtn.classList.add('hidden');
-        els.morePlaylistsBtn.classList.add('hidden');
-
-        const pageTokenKey = isVideos ? 'videosPageToken' : 'playlistsPageToken';
-        if (reset) { tabEl.innerHTML = ''; state.current[pageTokenKey] = null; }
-        showStatus(`Lade ${type}...`, false);
-        tabEl.classList.remove('hidden'); otherTabEl.classList.add('hidden');
-        try {
-            const info = await getChannelInfo(state.current.channelId);
-            let data = isVideos 
-                ? await cachedApi('playlistItems', { playlistId: info.uploadsId, pageToken: state.current[pageTokenKey], part: 'snippet', maxResults: 15 })
-                : await cachedApi('playlists', { channelId: state.current.channelId, pageToken: state.current[pageTokenKey], part: 'snippet', maxResults: 15 });
-            state.current[pageTokenKey] = data.nextPageToken || null;
-            if (reset) tabEl.innerHTML = '';
-
-            let items = (data.items || []).filter(it => it.snippet?.thumbnails);
-            if (isVideos) items = await enrichVideosWithDuration(items, 'snippet');
-            
-            items.forEach(it => {
-                if (isVideos) {
-                    tabEl.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
-                } else {
-                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
-                }
-            });
-            moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
-            hideStatus();
-        } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, true); }
-    };
-        
-    const renderPlaylistVideos = async ({ reset = true } = {}) => {
-        if (reset) { state.current.playlistVideosPageToken = null; els.playlistVideos.innerHTML = ''; }
-        showStatus('Lade Playlist-Inhalte...', false);
-        try {
-            const { playlistId, channelId } = state.current.playlistContext;
-            const info = await getChannelInfo(channelId);
-            const data = await cachedApi('playlistItems', { playlistId, pageToken: state.current.playlistVideosPageToken, maxResults: 15, part: 'snippet' });
-            state.current.playlistVideosPageToken = data.nextPageToken || null;
-            
-            const enrichedVideos = await enrichVideosWithDuration(data.items || [], 'snippet');
-            enrichedVideos.forEach(it => {
-                els.playlistVideos.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
-            });
-            els.morePlaylistVideosBtn.classList.toggle('hidden', !state.current.playlistVideosPageToken);
-            hideStatus();
-        } catch(e) { showStatus(`Fehler beim Laden der Playlist: ${e.message}`, true); }
+        const { channels, videos } = JSON.parse(cachedData);
+        els.favoriteChannelGrid.innerHTML = ''; els.otherChannelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
+        channels.forEach(ch => renderChannelCard(ch, ch.isFavorite));
+        videos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v)));
+        updateAllProgressBars();
+        return true;
     };
 
-    const searchInChannel = async () => {
-        const q = els.searchInput.value.trim();
-        state.current.searchQuery = q;
-        if (!q) {
-            els.sortOptions.classList.add('hidden');
-            return showChannelContent(state.current.tab, { reset: true });
-        }
-        els.sortOptions.classList.remove('hidden');
-        els.sortButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
+    const fetchAndRenderHome = async () => {
+        showStatus('Lade Kanäle und neueste Videos...');
+        els.favoriteChannelGrid.innerHTML = ''; els.otherChannelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
         
-        showStatus(`Suche nach "${q}"...`);
-        els.videosTab.innerHTML = '';
-        try {
-            const data = await cachedApi('search', { channelId: state.current.channelId, q: `"${q}"`, type: 'video', part: 'snippet', maxResults: 25, order: state.current.searchOrder });
-            const info = await getChannelInfo(state.current.channelId);
-            let items = await enrichVideosWithDuration(data.items || [], 'id');
-            items.forEach(it => {
-                els.videosTab.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
-            });
-            hideStatus();
-        } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
+        const infoPromises = CHANNELS_CONFIG.map(config => getChannelInfo(config.handle).then(info => ({...info, isFavorite: config.isFavorite})));
+        const infoResults = await Promise.allSettled(infoPromises);
+        
+        const successfulChannels = infoResults
+            .filter(r => r.status === 'fulfilled' && r.value)
+            .map(r => r.value);
+        
+        successfulChannels.forEach(ch => renderChannelCard(ch, ch.isFavorite));
+        
+        const latestVideoPromises = successfulChannels.map(info =>
+            fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${info.uploadsId}&maxResults=1&key=${YOUTUBE_API_KEY}`)
+                .then(res => res.json())
+                .then(data => ({ ...data, channelTitle: info.title }))
+        );
+        const videoResults = await Promise.allSettled(latestVideoPromises);
+        
+        const latestItems = videoResults
+            .filter(r => r.status === 'fulfilled' && r.value.items?.length > 0)
+            .map(r => ({ ...r.value.items[0], channelTitle: r.value.channelTitle }));
+
+        const enrichedItems = await enrichVideosWithDuration(latestItems, 'snippet');
+        const allVideos = enrichedItems.map(it => ({
+            videoId: it.snippet.resourceId.videoId, title: it.snippet.title,
+            date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url,
+            channelId: it.snippet.channelId, channelTitle: it.channelTitle,
+            durationSeconds: it.durationSeconds
+        }));
+        
+        allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
+        allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v)));
+        
+        localStorage.setItem('homeData', JSON.stringify({ channels: successfulChannels, videos: allVideos }));
+        hideStatus();
     };
 
     // ===== NAVIGATION & ROUTING =====
     const navigate = hash => window.location.hash = hash;
     const parseRoute = () => {
-        const h = window.location.hash.slice(1);
-        if(!h) return {view: 'home'};
+        const h = window.location.hash.slice(1) || 'home';
         const parts = h.split('/');
         return { view: parts[0], id: parts[1], tab: parts[2] };
     };
     const setView = name => {
-        Object.values(els).forEach(el => {
-            if (el.id?.endsWith('View')) el.classList.add('hidden');
+        ['homeView', 'channelView', 'playlistView', 'privacyView', 'termsView'].forEach(viewId => {
+            if (els[viewId]) els[viewId].classList.add('hidden');
         });
-        els[`${name}View`].classList.remove('hidden');
+        if (els[name + 'View']) els[name + 'View'].classList.remove('hidden');
     };
     
     const openPlayer = (videoId, title) => {
         els.playerTitle.textContent = title || 'Video';
         els.overlay.classList.add('show');
-        state.current.playingVideoId = videoId;
         const progress = state.progressData.get(videoId);
         
         state.current.player = new YT.Player('player-mount', {
-            height: '100%', width: '100%', videoId: videoId,
+            height: '100%', width: '100%', videoId,
             playerVars: { 'playsinline': 1, 'autoplay': 1, 'rel': 0, 'start': progress?.currentTime || 0 },
             events: { 'onStateChange': onPlayerStateChange }
         });
@@ -578,10 +487,8 @@ document.addEventListener('DOMContentLoaded', () => {
         state.current.playerStateInterval = setInterval(() => {
             const currentTime = player.getCurrentTime();
             const duration = player.getDuration();
-            if (currentTime > 0 && duration > 0) {
-                saveProgress(videoId, currentTime, duration);
-            }
-        }, 5000);
+            if (currentTime > 0 && duration > 0) saveProgress(videoId, currentTime, duration);
+        }, 3000);
     };
 
     const closePlayer = () => {
@@ -589,106 +496,65 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.current.player?.destroy) state.current.player.destroy();
         state.current.player = null;
         els.overlay.classList.remove('show');
-        updateAllProgressBars();
-        state.current.playingVideoId = null;
-    };
-    const openPlaylist = (playlistId, channelId, title) => {
-        state.lastChannelRoute = `channel/${channelId}/playlists`;
-        navigate(`playlist/${playlistId}:${channelId}/${encodeURIComponent(title || '')}`);
     };
     
     const handleRoute = async () => {
         const r = parseRoute();
         hideStatus();
         try {
-            if (r.view === 'home') {
-                setView('home');
-                await buildHome();
-            } else if (r.view === 'channel' && r.id) {
-                setView('channel'); 
-                state.current.channelId = r.id; 
-                state.current.tab = r.tab || 'videos';
-                els.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === state.current.tab));
-                const info = await getChannelInfo(r.id);
-                els.channelMeta.textContent = info.title;
-                els.channelBannerContainer.classList.toggle('hidden', !info.banner);
-                if (info.banner) {
-                    els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
-                    els.channelBanner.style.backgroundImage = `url(${info.banner})`;
+            if (['home', 'privacy', 'terms'].includes(r.view)) {
+                setView(r.view);
+                if (r.view === 'home' && !renderHomeFromCache()) {
+                    await fetchAndRenderHome();
                 }
-                await showChannelContent(state.current.tab, { reset: true });
-            } else if (r.view === 'playlist' && r.id) {
-                setView('playlist'); 
-                const [playlistId, channelId] = r.id.split(':');
-                state.current.playlistContext = { playlistId, channelId };
-                await renderPlaylistVideos({ reset: true });
-            } else {
-                navigate('home');
+            } else if (r.view === 'channel' && r.id) {
+                // Hier kommt deine Logik für die Kanal-Ansicht hin
+                setView('channel'); 
+            } else { 
+                navigate('home'); 
             }
-        } catch (e) {
-            console.error(`Fehler bei Navigation zu #${window.location.hash}:`, e);
-            showStatus(e.message, true);
-        }
+        } catch (e) { console.error(`Fehler bei Navigation:`, e); showStatus(e.message, true); }
     };
     
     // ===== EVENT LISTENERS =====
     const setupEventListeners = () => {
-        window.addEventListener('hashchange', handleRoute);
-        els.homeBtn.addEventListener('click', () => navigate('home'));
-        els.backBtn.addEventListener('click', () => history.back());
-        els.forwardBtn.addEventListener('click', () => history.forward());
-        els.backToChannelBtn.addEventListener('click', () => state.lastChannelRoute ? navigate(state.lastChannelRoute) : navigate('home'));
-        els.playerClose.addEventListener('click', closePlayer);
-        els.overlay.addEventListener('click', e => { if (e.target === els.overlay) closePlayer(); });
-        els.tabs.forEach(btn => btn.addEventListener('click', () => navigate(`channel/${state.current.channelId}/${btn.dataset.tab}`)));
-        els.moreVideosBtn.addEventListener('click', () => showChannelContent('videos', { reset: false }));
-        els.morePlaylistsBtn.addEventListener('click', () => showChannelContent('playlists', { reset: false }));
-        els.morePlaylistVideosBtn.addEventListener('click', () => renderPlaylistVideos({ reset: false }));
-        els.searchBtn.addEventListener('click', searchInChannel);
-        els.searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchInChannel(); });
-        els.sortButtons.forEach(btn => btn.addEventListener('click', () => {
-            state.current.searchOrder = btn.dataset.sort;
-            searchInChannel();
-        }));
+        window.onhashchange = handleRoute;
+        els.homeBtn.onclick = () => navigate('home');
+        els.refreshBtn.onclick = fetchAndRenderHome;
+        els.backBtn.onclick = () => history.back();
+        els.forwardBtn.onclick = () => history.forward();
+        els.playerClose.onclick = closePlayer;
+        els.overlay.onclick = e => { if (e.target === els.overlay) closePlayer(); };
     };
 
     // ===== APP INITIALIZATION & AUTH =====
     const initAuth = () => {
-        els.authBtn.addEventListener('click', () => {
-            if (state.user) {
-                auth.signOut();
-            } else {
-                auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(error => {
-                    console.error("Login fehlgeschlagen:", error);
-                    showStatus("Anmeldung mit Google ist fehlgeschlagen.", true);
-                });
-            }
-        });
-
+        els.authBtn.onclick = () => {
+            if (state.user) auth.signOut();
+            else auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => showStatus(`Anmeldung fehlgeschlagen: ${err.message}`, true));
+        };
         auth.onAuthStateChanged(user => {
-            const isLoggedIn = !!user;
             const wasLoggedIn = !!state.user;
+            state.user = user; state.userId = user?.uid;
             
-            state.user = user;
-            state.userId = user?.uid || null;
-            els.authBtn.textContent = isLoggedIn ? 'Abmelden' : 'Anmelden';
-            els.userAvatar.classList.toggle('hidden', !isLoggedIn);
-            if (isLoggedIn) els.userAvatar.src = user.photoURL;
+            els.authBtn.textContent = user ? 'Abmelden' : 'Anmelden';
+            els.userAvatar.classList.toggle('hidden', !user);
+            if (user) els.userAvatar.src = user.photoURL;
 
-            if (isLoggedIn) {
+            if (user) {
                 setupProgressListener();
             } else {
                 if (state.progressListenerUnsubscribe) state.progressListenerUnsubscribe();
                 state.progressData.clear();
+                updateAllProgressBars();
             }
-            
-            if (isLoggedIn !== wasLoggedIn) {
-                setupEventListeners();
+            if (!!user !== wasLoggedIn || !wasLoggedIn) { // Run on first load and on auth state change
                 handleRoute();
             }
         });
     };
     
+    setupEventListeners();
     window.addEventListener('youtube-api-ready', initAuth);
 });
 </script>
