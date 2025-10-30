@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V7.0 (Firebase Cache)</title>
+  <title>YouTube Whitelist V7.1 (Firebase Cache Fix)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -317,6 +317,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     };
     
+    const playlistCard = (p) => {
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta"><span>Playlist</span></div></div>`;
+        card.onclick = () => alert('Playlist-Ansicht noch nicht implementiert.');
+        return card;
+    };
+
     const updateAllProgressBars = () => {
         document.querySelectorAll('.video-card[data-video-id]').forEach(card => {
             const videoId = card.dataset.videoId;
@@ -353,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.channels.has(identifier)) return state.channels.get(identifier);
         
         let channelId = identifier;
+        // KORREKTUR: Prüfen, ob es ein Handle ist, bevor man sucht
         if (identifier.startsWith('@')) {
             const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${identifier}&type=channel&maxResults=1&key=${YOUTUBE_API_KEY}`);
             if (!searchRes.ok) throw new Error('API-Fehler bei Kanalsuche');
@@ -367,7 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const c = data.items?.[0];
         if (!c) throw new Error(`Kanal-Info für ID ${channelId} nicht gefunden.`);
         
-        const banner = c.brandingSettings?.image?.bannerTvImageUrl?.replace(/=w\d+/, '=w2560');
+        // KORREKTUR: 'undefined' abfangen und durch 'null' ersetzen
+        const banner = c.brandingSettings?.image?.bannerTvImageUrl?.replace(/=w\d+/, '=w2560') || null;
         const info = { id: c.id, title: c.snippet?.title, thumb: c.snippet?.thumbnails?.default?.url, uploadsId: c.contentDetails?.relatedPlaylists?.uploads, banner };
         state.channels.set(identifier, info);
         state.channels.set(info.id, info);
@@ -426,18 +436,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isVideos) {
                     tabEl.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
                 } else {
-                    const pCard = document.createElement('div');
-                    pCard.className = 'video-card';
-                    pCard.innerHTML = `<div class="thumb"><img loading="lazy" src="${it.snippet.thumbnails?.medium?.url || ''}" alt=""></div><div class="card-body"><div class="title">${it.snippet.title || '?'}</div><div class="meta"><span>Playlist</span></div></div>`;
-                    pCard.onclick = () => alert('Playlist-Ansicht noch nicht implementiert.');
-                    tabEl.appendChild(pCard);
+                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
                 }
             });
             moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
             hideStatus();
         } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, true); }
     };
-
+    
+    // KORREKTUR: VOLLSTÄNDIGE searchInChannel FUNKTION WIEDERHERGESTELLT
     const searchInChannel = async () => {
         const q = els.searchInput.value.trim();
         if (!q) return showChannelContent('videos', { reset: true });
