@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V6.2 (Fixed)</title>
+  <title>YouTube Whitelist V7.0 (Firebase Cache)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -88,7 +88,7 @@
   <div class="topbar">
     <button class="btn" id="backBtn">←</button>
     <button class="btn" id="homeBtn">Home</button>
-    <button class="btn" id="refreshBtn">Neu laden 🔄</button>
+    <button class="btn" id="refreshBtn">🔄</button>
     <button class="btn" id="forwardBtn">→</button>
     <div class="auth-container">
         <img id="userAvatar" class="hidden" alt="User Avatar">
@@ -141,15 +141,6 @@
     <button id="moreVideosBtn" class="loadmore hidden">Mehr Videos laden</button>
     <div id="playlistsTab" class="grid cols-vids hidden"></div>
     <button id="morePlaylistsBtn" class="loadmore hidden">Mehr Playlists laden</button>
-  </section>
-
-  <section id="playlistView" class="section hidden">
-    <div class="pl-head">
-      <button class="btn" id="backToChannelBtn">← Zurück zum Kanal</button>
-      <div class="pl-title" id="playlistTitle">Playlist</div>
-    </div>
-    <div id="playlistVideos" class="grid cols-vids" style="margin-top: 14px;"></div>
-    <button id="morePlaylistVideosBtn" class="loadmore hidden">Mehr laden</button>
   </section>
   
   <section id="privacyView" class="section text-page hidden">
@@ -274,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+    const homeCacheRef = db.collection('cache').doc('homeData');
 
     // ===== UTILS & HELPERS =====
     const showStatus = (message, isError = false) => { els.statusBox.textContent = message; els.statusBox.className = isError ? 'error' : 'loading'; };
@@ -325,13 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     };
     
-    const playlistCard = (p) => {
-        const card = document.createElement('div');
-        card.className = 'video-card';
-        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta"><span>${p.channelTitle || 'Playlist'}</span></div></div>`;
-        card.onclick = () => openPlaylist(p.playlistId, p.channelId, p.title); return card;
-    };
-
     const updateAllProgressBars = () => {
         document.querySelectorAll('.video-card[data-video-id]').forEach(card => {
             const videoId = card.dataset.videoId;
@@ -409,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(item => ({ ...item, durationSeconds: durationMap.get(getVideoId(item, idKey)) || 0 }))
             .filter(item => item.durationSeconds > 120);
     };
-    
+
     const showChannelContent = async (type, { reset = true } = {}) => {
         const isVideos = type === 'videos';
         const tabEl = isVideos ? els.videosTab : els.playlistsTab;
@@ -424,14 +409,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const info = await getChannelInfo(state.current.channelId);
             const endpoint = isVideos ? 'playlistItems' : 'playlists';
-            const params = new URLSearchParams({
-                key: YOUTUBE_API_KEY,
-                part: 'snippet',
-                maxResults: 15,
-            });
+            const params = new URLSearchParams({ key: YOUTUBE_API_KEY, part: 'snippet', maxResults: 15 });
             if(isVideos) params.set('playlistId', info.uploadsId);
             else params.set('channelId', state.current.channelId);
-
             if (state.current[pageTokenKey]) params.set('pageToken', state.current[pageTokenKey]);
 
             const res = await fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${params}`);
@@ -439,8 +419,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             
             state.current[pageTokenKey] = data.nextPageToken || null;
-            if (reset) tabEl.innerHTML = '';
-            
             let items = (data.items || []).filter(it => it.snippet?.thumbnails);
             if (isVideos) items = await enrichVideosWithDuration(items, 'snippet');
             
@@ -448,7 +426,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isVideos) {
                     tabEl.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
                 } else {
-                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
+                    const pCard = document.createElement('div');
+                    pCard.className = 'video-card';
+                    pCard.innerHTML = `<div class="thumb"><img loading="lazy" src="${it.snippet.thumbnails?.medium?.url || ''}" alt=""></div><div class="card-body"><div class="title">${it.snippet.title || '?'}</div><div class="meta"><span>Playlist</span></div></div>`;
+                    pCard.onclick = () => alert('Playlist-Ansicht noch nicht implementiert.');
+                    tabEl.appendChild(pCard);
                 }
             });
             moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
@@ -465,15 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showStatus(`Suche nach "${q}"...`);
         els.videosTab.innerHTML = '';
         try {
-            const params = new URLSearchParams({
-                key: YOUTUBE_API_KEY,
-                part: 'snippet',
-                maxResults: 25,
-                channelId: state.current.channelId,
-                q: `"${q}"`,
-                type: 'video',
-                order: state.current.searchOrder,
-            });
+            const params = new URLSearchParams({ key: YOUTUBE_API_KEY, part: 'snippet', maxResults: 25, channelId: state.current.channelId, q: `"${q}"`, type: 'video', order: state.current.searchOrder });
             const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
             if(!res.ok) throw new Error('API-Fehler bei der Suche');
             const data = await res.json();
@@ -486,45 +460,45 @@ document.addEventListener('DOMContentLoaded', () => {
             hideStatus();
         } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
     };
-    
-    // ===== LOCALSTORAGE & HOMEPAGE LOGIC =====
-    const renderHomeFromCache = () => {
-        const cachedData = localStorage.getItem('homeData');
-        if (!cachedData) return false;
-        const { channels, videos } = JSON.parse(cachedData);
+
+    // ===== FIREBASE CACHE & HOMEPAGE LOGIC =====
+    const renderHomeFromFirebase = (data) => {
+        if (!data || !data.channels || !data.videos) {
+            showStatus('Cache ist leer. Bitte "🔄" klicken, um Daten zu laden.');
+            return;
+        }
+        const { channels, videos } = data;
         els.favoriteChannelGrid.innerHTML = ''; els.otherChannelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
         channels.forEach(ch => renderChannelCard(ch, ch.isFavorite));
         videos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v)));
         updateAllProgressBars();
-        return true;
     };
 
-    const fetchAndRenderHome = async () => {
-        showStatus('Lade Kanäle und neueste Videos...');
-        els.favoriteChannelGrid.innerHTML = ''; els.otherChannelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
+    const forceUpdateAndCacheToFirebase = async () => {
+        showStatus('Aktualisiere Daten von YouTube...');
         
         const infoPromises = CHANNELS_CONFIG.map(config => getChannelInfo(config.handle).then(info => ({...info, isFavorite: config.isFavorite})));
         const infoResults = await Promise.allSettled(infoPromises);
-        
-        const successfulChannels = infoResults
-            .filter(r => r.status === 'fulfilled' && r.value)
-            .map(r => r.value);
-        
-        successfulChannels.forEach(ch => renderChannelCard(ch, ch.isFavorite));
+        const successfulChannels = infoResults.filter(r => r.status === 'fulfilled').map(r => r.value);
         
         const latestVideoPromises = successfulChannels.map(info =>
-            fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${info.uploadsId}&maxResults=1&key=${YOUTUBE_API_KEY}`)
+            fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${info.uploadsId}&maxResults=5&key=${YOUTUBE_API_KEY}`)
                 .then(res => res.json())
                 .then(data => ({ ...data, channelTitle: info.title }))
         );
         const videoResults = await Promise.allSettled(latestVideoPromises);
         
-        const latestItems = videoResults
-            .filter(r => r.status === 'fulfilled' && r.value.items?.length > 0)
-            .map(r => ({ ...r.value.items[0], channelTitle: r.value.channelTitle }));
+        const firstValidVideos = [];
+        for(const result of videoResults){
+            if(result.status === 'fulfilled' && result.value.items?.length > 0){
+                const enrichedItems = await enrichVideosWithDuration(result.value.items, 'snippet');
+                if(enrichedItems.length > 0) {
+                    firstValidVideos.push({...enrichedItems[0], channelTitle: result.value.channelTitle});
+                }
+            }
+        }
 
-        const enrichedItems = await enrichVideosWithDuration(latestItems, 'snippet');
-        const allVideos = enrichedItems.map(it => ({
+        const allVideos = firstValidVideos.map(it => ({
             videoId: it.snippet.resourceId.videoId, title: it.snippet.title,
             date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url,
             channelId: it.snippet.channelId, channelTitle: it.channelTitle,
@@ -532,9 +506,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
         
         allVideos.sort((a, b) => new Date(b.date) - new Date(a.date));
-        allVideos.forEach(v => els.latestVideosGrid.appendChild(videoCard(v)));
         
-        localStorage.setItem('homeData', JSON.stringify({ channels: successfulChannels, videos: allVideos }));
+        const cacheData = { channels: successfulChannels, videos: allVideos, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+        await homeCacheRef.set(cacheData);
         hideStatus();
     };
 
@@ -590,11 +564,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (['home', 'privacy', 'terms'].includes(r.view)) {
                 setView(r.view);
-                if (r.view === 'home' && !renderHomeFromCache()) {
-                    await fetchAndRenderHome();
-                }
             } else if (r.view === 'channel' && r.id) {
-                setView('channel');
+                setView('channel'); 
                 state.current.channelId = r.id; 
                 state.current.tab = r.tab || 'videos';
                 els.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === state.current.tab));
@@ -616,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const setupEventListeners = () => {
         window.onhashchange = handleRoute;
         els.homeBtn.onclick = () => navigate('home');
-        els.refreshBtn.onclick = fetchAndRenderHome;
+        els.refreshBtn.onclick = forceUpdateAndCacheToFirebase;
         els.backBtn.onclick = () => history.back();
         els.forwardBtn.onclick = () => history.forward();
         els.playerClose.onclick = closePlayer;
@@ -660,6 +631,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     setupEventListeners();
+    homeCacheRef.onSnapshot(doc => {
+        if (doc.exists) {
+            renderHomeFromFirebase(doc.data());
+        } else {
+            showStatus('Cache leer. Klicke auf "🔄", um die Daten erstmalig zu laden.');
+        }
+    }, console.error);
     window.addEventListener('youtube-api-ready', initAuth);
 });
 </script>
