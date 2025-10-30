@@ -166,7 +166,7 @@
     <h3>Weitergabe von Daten</h3>
     <p>Deine persönlichen Daten, insbesondere dein Videofortschritt, werden nicht mit internen oder externen Dritten geteilt, verkauft oder anderweitig offengelegt. Wir erlauben keinen Drittanbietern, auf deine Daten zuzugreifen oder diese zu sammeln.</p>
     <h3>Kontakt</h3>
-    <p>Bei Fragen zum Datenschutz erreichst du uns unter: <strong>[DEINE E-MAIL-ADRESSE HIER]</strong></p>
+    <p>Bei Fragen zum Datenschutz erreichst du uns unter: <strong>timborelloeggers@gmail.com</strong></p>
   </section>
 
   <section id="termsView" class="section text-page hidden">
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         channels: new Map(), 
         current: { 
             channelId: null, tab: 'videos', videosPageToken: null, 
-            playlistsPageToken: null, player: null, playerStateInterval: null,
+            playlistsPageToken: null, player: null, playerStateInterval: null, searchQuery: null, searchOrder: 'date'
         },
         lastChannelRoute: null,
     };
@@ -324,6 +324,13 @@ document.addEventListener('DOMContentLoaded', () => {
         card.onclick = () => openPlayer(v.videoId, v.title); 
         return card;
     };
+    
+    const playlistCard = (p) => {
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta"><span>${p.channelTitle || 'Playlist'}</span></div></div>`;
+        card.onclick = () => openPlaylist(p.playlistId, p.channelId, p.title); return card;
+    };
 
     const updateAllProgressBars = () => {
         document.querySelectorAll('.video-card[data-video-id]').forEach(card => {
@@ -358,13 +365,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const getChannelInfo = async (identifier) => {
-        if (state.channels.has(identifier)?.banner) return state.channels.get(identifier);
+        if (state.channels.has(identifier)) return state.channels.get(identifier);
         
-        const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${identifier}&type=channel&maxResults=1&key=${YOUTUBE_API_KEY}`);
-        if (!searchRes.ok) throw new Error('API-Fehler bei Kanalsuche');
-        const searchData = await searchRes.json();
-        const channelId = searchData.items?.[0]?.snippet?.channelId;
-        if (!channelId) throw new Error(`Kanal-Handle '${identifier}' nicht gefunden.`);
+        let channelId = identifier;
+        if (identifier.startsWith('@')) {
+            const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${identifier}&type=channel&maxResults=1&key=${YOUTUBE_API_KEY}`);
+            if (!searchRes.ok) throw new Error('API-Fehler bei Kanalsuche');
+            const searchData = await searchRes.json();
+            channelId = searchData.items?.[0]?.snippet?.channelId;
+            if (!channelId) throw new Error(`Kanal-Handle '${identifier}' nicht gefunden.`);
+        }
         
         const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings&id=${channelId}&key=${YOUTUBE_API_KEY}`);
         if (!channelRes.ok) throw new Error('API-Fehler bei Kanal-Details');
@@ -400,11 +410,87 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(item => item.durationSeconds > 120);
     };
     
+    const showChannelContent = async (type, { reset = true } = {}) => {
+        const isVideos = type === 'videos';
+        const tabEl = isVideos ? els.videosTab : els.playlistsTab;
+        const otherTabEl = isVideos ? els.playlistsTab : els.videosTab;
+        const moreBtn = isVideos ? els.moreVideosBtn : els.morePlaylistsBtn;
+        
+        els.moreVideosBtn.classList.add('hidden'); els.morePlaylistsBtn.classList.add('hidden');
+        const pageTokenKey = isVideos ? 'videosPageToken' : 'playlistsPageToken';
+        if (reset) { tabEl.innerHTML = ''; state.current[pageTokenKey] = null; }
+        showStatus(`Lade ${type}...`);
+        tabEl.classList.remove('hidden'); otherTabEl.classList.add('hidden');
+        try {
+            const info = await getChannelInfo(state.current.channelId);
+            const endpoint = isVideos ? 'playlistItems' : 'playlists';
+            const params = new URLSearchParams({
+                key: YOUTUBE_API_KEY,
+                part: 'snippet',
+                maxResults: 15,
+            });
+            if(isVideos) params.set('playlistId', info.uploadsId);
+            else params.set('channelId', state.current.channelId);
+
+            if (state.current[pageTokenKey]) params.set('pageToken', state.current[pageTokenKey]);
+
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${params}`);
+            if (!res.ok) throw new Error('API-Fehler beim Laden von Inhalten');
+            const data = await res.json();
+            
+            state.current[pageTokenKey] = data.nextPageToken || null;
+            if (reset) tabEl.innerHTML = '';
+            
+            let items = (data.items || []).filter(it => it.snippet?.thumbnails);
+            if (isVideos) items = await enrichVideosWithDuration(items, 'snippet');
+            
+            items.forEach(it => {
+                if (isVideos) {
+                    tabEl.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
+                } else {
+                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
+                }
+            });
+            moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
+            hideStatus();
+        } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, true); }
+    };
+
+    const searchInChannel = async () => {
+        const q = els.searchInput.value.trim();
+        if (!q) return showChannelContent('videos', { reset: true });
+        
+        els.sortOptions.classList.remove('hidden');
+        document.querySelectorAll('[data-sort]').forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
+        showStatus(`Suche nach "${q}"...`);
+        els.videosTab.innerHTML = '';
+        try {
+            const params = new URLSearchParams({
+                key: YOUTUBE_API_KEY,
+                part: 'snippet',
+                maxResults: 25,
+                channelId: state.current.channelId,
+                q: `"${q}"`,
+                type: 'video',
+                order: state.current.searchOrder,
+            });
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
+            if(!res.ok) throw new Error('API-Fehler bei der Suche');
+            const data = await res.json();
+            
+            const info = await getChannelInfo(state.current.channelId);
+            let items = await enrichVideosWithDuration(data.items || [], 'id');
+            items.forEach(it => {
+                els.videosTab.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
+            });
+            hideStatus();
+        } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
+    };
+    
     // ===== LOCALSTORAGE & HOMEPAGE LOGIC =====
     const renderHomeFromCache = () => {
         const cachedData = localStorage.getItem('homeData');
         if (!cachedData) return false;
-
         const { channels, videos } = JSON.parse(cachedData);
         els.favoriteChannelGrid.innerHTML = ''; els.otherChannelGrid.innerHTML = ''; els.latestVideosGrid.innerHTML = '';
         channels.forEach(ch => renderChannelCard(ch, ch.isFavorite));
@@ -508,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await fetchAndRenderHome();
                 }
             } else if (r.view === 'channel' && r.id) {
-                setView('channel'); 
+                setView('channel');
                 state.current.channelId = r.id; 
                 state.current.tab = r.tab || 'videos';
                 els.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === state.current.tab));
@@ -519,7 +605,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
                     els.channelBanner.style.backgroundImage = `url(${info.banner})`;
                 }
-                // HIER WURDE DER AUFRUF ZUM LADEN DES KANAL-INHALTS WIEDER EINGEFÜGT
                 await showChannelContent(state.current.tab, { reset: true });
             } else { 
                 navigate('home'); 
