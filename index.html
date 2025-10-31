@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return items
             .map(item => ({ ...item, durationSeconds: durationMap.get(getVideoId(item, idKey)) || 0 }))
-            .filter(item => item.durationSeconds > 120);
+            .filter(item => item.durationSeconds > 180);
     };
 
     const showChannelContent = async (type, { reset = true } = {}) => {
@@ -658,3 +658,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
