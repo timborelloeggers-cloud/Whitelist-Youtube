@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V8.0 (Final Features)</title>
+  <title>YouTube Whitelist V8.1 (UI Polish)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -27,13 +27,20 @@
     .section{margin-top:14px}
     .section h2{font-size:1.05rem;margin:.25rem 4px}
     .grid{display:grid;gap:12px}
-    .grid.cols-channels{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+    .grid.cols-channels{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
     .grid.cols-vids{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-    .chan-card{background:var(--card);border:1px solid #262626;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);padding:12px;display:flex;gap:12px;align-items:center;cursor:pointer}
-    .chan-thumb{width:56px;height:56px;border-radius:999px;background:#2b2b2b;overflow:hidden;flex:0 0 auto}
+    
+    .chan-card{
+        background:var(--card);border:1px solid #262626;border-radius:var(--radius);
+        overflow:hidden;box-shadow:var(--shadow);padding:12px;
+        display:flex; flex-direction: column; gap:8px; align-items:center; text-align:center; cursor:pointer;
+    }
+    .chan-thumb{width:48px;height:48px;border-radius:50%;background:#2b2b2b;overflow:hidden;flex:0 0 auto}
     .chan-thumb img{width:100%;height:100%;object-fit:cover;display:block}
     .chan-meta{display:flex;flex-direction:column;gap:2px}
-    .chan-title{font-weight:700}
+    .chan-title{font-weight:700; font-size: 0.9rem;}
+    .chan-card .sub { font-size: 0.8rem; }
+
     .video-card{background:var(--card);border:1px solid #262626;border-radius:calc(var(--radius) + 2px);overflow:hidden;box-shadow:var(--shadow); cursor:pointer;}
     .thumb{position:relative;aspect-ratio:16/9;background:#222}
     .thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -53,7 +60,7 @@
     #channelBannerContainer{position: relative;width: 100%;min-height: 120px;border-radius: calc(var(--radius) - 4px);margin-bottom: 12px;overflow: hidden;background-color: #222;display: flex;align-items: center;justify-content: center;}
     #channelBannerBackground{position: absolute;inset: 0;background-size: cover;background-position: center center;filter: blur(8px) brightness(0.6);transform: scale(1.05);}
     #channelBanner{position: relative;max-width: 60%;max-height: 100px;aspect-ratio: 4/1;background-size: contain;background-repeat: no-repeat;background-position: center center;border-radius: var(--radius);box-shadow: var(--shadow);background-color: rgba(0,0,0,0.3);}
-    @media (max-width: 768px) { #channelBanner{ max-width: 80%; } }
+    @media (max-width: 768px) { #channelBanner{ max-width: 80%; } .grid.cols-channels{grid-template-columns:repeat(2,1fr);} }
     .loadmore{display:block;width:100%;margin:14px 0;background:#1b1b1b;color:#eee;border:1px solid #2a2a2a;border-radius:999px;padding:.6rem;cursor:pointer}
     .hidden{display:none!important}
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
@@ -84,14 +91,20 @@
         transform: translateX(100%);
         transition: transform 0.3s ease-in-out;
         z-index: 300;
-        padding: 20px;
+        padding: 40px 20px;
         display: flex;
         flex-direction: column;
-        gap: 20px;
     }
     .side-menu.open { transform: translateX(0); }
-    .side-menu .auth-container { flex-direction: column; gap: 15px; align-items: center; margin-left: 0; }
-    #userAvatar { width: 64px; height: 64px; }
+    .side-menu .auth-container { 
+        display: flex;
+        flex-direction: column; 
+        align-items: center; 
+        gap: 15px; 
+        margin-left: 0; 
+        text-align: center;
+    }
+    #userAvatar { width: 64px; height: 64px; border-radius: 50%; }
     #userName { font-weight: bold; }
     .menu-overlay {
         position: fixed;
@@ -338,6 +351,14 @@ document.addEventListener('DOMContentLoaded', () => {
         card.onclick = () => openPlayer(v.videoId, v.title); 
         return card;
     };
+
+    const playlistCard = (p) => {
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta"><span>Playlist</span></div></div>`;
+        card.onclick = () => alert('Playlist-Ansicht noch nicht implementiert.');
+        return card;
+    };
     
     const updateAllProgressBars = () => {
         document.querySelectorAll('.video-card[data-video-id]').forEach(card => {
@@ -444,6 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const idsToFetch = top8.filter(v => !state.videoDetailsCache.has(v.videoId)).map(v => v.videoId);
 
         if (idsToFetch.length > 0) {
+            await delay(100); // Small delay to avoid rate limiting
             const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${idsToFetch.join(',')}&key=${YOUTUBE_API_KEY}`);
             if (res.ok) {
                 const data = await res.json();
@@ -468,7 +490,8 @@ document.addEventListener('DOMContentLoaded', () => {
         top8.forEach(v => {
             const details = state.videoDetailsCache.get(v.videoId);
             if (details) {
-                els.continueWatchingGrid.appendChild(videoCard({ videoId: v.videoId, date: v.lastWatched.toDate().toISOString(), ...details }));
+                const date = v.lastWatched.toDate ? v.lastWatched.toDate().toISOString() : new Date().toISOString();
+                els.continueWatchingGrid.appendChild(videoCard({ videoId: v.videoId, date, ...details }));
             }
         });
         els.continueWatchingSection.classList.remove('hidden');
@@ -641,8 +664,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     setupEventListeners();
     homeCacheRef.onSnapshot(doc => {
-        if (doc.exists) renderHomeFromFirebase(doc.data());
-        else showStatus('Cache leer. Klicke auf "🔄", um die Daten erstmalig zu laden.');
+        if (doc.exists) {
+            renderHomeFromFirebase(doc.data());
+        } else {
+            showStatus('Cache leer. Klicke auf "🔄", um die Daten erstmalig zu laden.');
+        }
     }, console.error);
     videoDetailsCacheRef.get().then(doc => {
         if(doc.exists) {
