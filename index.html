@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V8.2 (Firebase Cache Fix II)</title>
+  <title>YouTube Whitelist V8.2 (Final Fix)</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -510,7 +510,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     newDetails[item.id] = detail;
                 });
                 if (Object.keys(newDetails).length > 0) {
-                    // Update cache in database. Use merge: true to update existing document
                     videoDetailsCacheRef.set({ videos: newDetails }, { merge: true });
                 }
             }
@@ -530,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== FIREBASE CACHE & HOMEPAGE LOGIC =====
     const renderHomeFromFirebase = (data) => {
         if (!data || !data.channels || !data.videos) {
-            showStatus('Cache ist leer. Bitte "🔄" klicken, um Daten zu laden.');
+            showStatus('Cache leer. Bitte "🔄" klicken, um Daten zu laden.');
             return;
         }
         const { channels, videos } = data;
@@ -773,6 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
+    // Initialisierung des Caches und der Events
     setupEventListeners();
     homeCacheRef.onSnapshot(doc => {
         if (doc.exists) renderHomeFromFirebase(doc.data());
