@@ -265,13 +265,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const CHANNELS_CONFIG = [
-        { handle: '@jpperformance', isFavorite: true }, { handle: '@Autodoktoren', isFavorite: true },
-        { handle: '@BreakingLab', isFavorite: true }, { handle: '@Halle77', isFavorite: true },
-        { handle: '@veritasium', isFavorite: true }, { handle: '@Simplicissimus', isFavorite: true },
-        { handle: '@2boredguys', isFavorite: true }, { handle: '@automotorsport', isFavorite: false },
-        { handle: '@MotorenZimmer', isFavorite: false }, { handle: '@MrWissen2go', isFavorite: false },
-        { handle: '@EngineeringExplained', isFavorite: false }, { handle: '@100SekundenPhysik', isFavorite: false },
-        { handle: '@TerraXLeschundCo', isFavorite: false }, { handle: '@mndiaye_97', isFavorite: false }
+        // Favoriten
+        { handle: '@jpperformance', isFavorite: true }, 
+        { handle: '@Autodoktoren', isFavorite: true },
+        { handle: '@Simplicissimus', isFavorite: true },
+        { handle: '@EngineeringExplained', isFavorite: true },
+
+        // Weitere Kanäle
+        { handle: '@BreakingLab', isFavorite: false },
+        { handle: '@veritasium', isFavorite: false },
+        { handle: '@2boredguys', isFavorite: false },
+        { handle: '@automotorsport', isFavorite: false },
+        { handle: '@MrWissen2go', isFavorite: false },
+        { handle: '@TerraXLeschundCo', isFavorite: false },
+        { handle: '@terraxhistory', isFavorite: false }
     ];
 
     // ===== STATE & ELEMENTS =====
@@ -792,6 +799,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
-
-
