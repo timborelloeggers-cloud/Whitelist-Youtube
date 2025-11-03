@@ -138,6 +138,7 @@
         width: fit-content;
         min-width: 250px;
         border-radius: 12px;
+        color: #fff;
     }
     .loadmore:hover {
         background: rgba(37,37,37,0.85);
@@ -512,12 +513,6 @@
         <div class="grid cols-channels" id="otherChannelGrid"></div>
       </div>
     </details>
-    <details id="continueWatchingSection" class="hidden">
-      <summary>Angefangene Videos</summary>
-      <div class="details-content">
-        <div class="grid cols-vids" id="continueWatchingGrid"></div>
-      </div>
-    </details>
     <div class="section">
       <h2>Neueste Videos</h2>
       <div class="grid cols-vids" id="latestVideosGrid"></div>
@@ -637,6 +632,16 @@
       </div>
     </div>
   </section>
+  <section id="continueView" class="section text-page hidden">
+    <h2>Angefangene Videos</h2>
+    <p class="setting-hint" style="margin-bottom: 1.5rem;">Hier findest du alle Videos, die du angefangen hast zu schauen.</p>
+    <div class="grid cols-vids" id="continueViewGrid"></div>
+  </section>
+  <section id="mylistView" class="section text-page hidden">
+    <h2>Meine Liste</h2>
+    <p class="setting-hint" style="margin-bottom: 1.5rem;">Deine persönliche Liste mit gespeicherten Videos.</p>
+    <div class="grid cols-vids" id="mylistViewGrid"></div>
+  </section>
 </main>
 
 <footer>
@@ -750,8 +755,6 @@ document.addEventListener('DOMContentLoaded', () => {
         favoriteChannelGrid: document.getElementById('favoriteChannelGrid'),
         otherChannelGrid: document.getElementById('otherChannelGrid'), 
         latestVideosGrid: document.getElementById('latestVideosGrid'),
-        continueWatchingSection: document.getElementById('continueWatchingSection'),
-        continueWatchingGrid: document.getElementById('continueWatchingGrid'),
         tabs: document.querySelectorAll('.tab'), videosTab: document.getElementById('videosTab'), playlistsTab: document.getElementById('playlistsTab'),
         moreVideosBtn: document.getElementById('moreVideosBtn'), morePlaylistsBtn: document.getElementById('morePlaylistsBtn'),
         searchInput: document.getElementById('searchInput'), searchBtn: document.getElementById('searchBtn'),
@@ -787,6 +790,10 @@ document.addEventListener('DOMContentLoaded', () => {
         sideMenu: document.getElementById('sideMenu'),
         menuOverlay: document.getElementById('menuOverlay'),
         settingsView: document.getElementById('settingsView'),
+        continueView: document.getElementById('continueView'),
+        mylistView: document.getElementById('mylistView'),
+        continueViewGrid: document.getElementById('continueViewGrid'),
+        mylistViewGrid: document.getElementById('mylistViewGrid'),
         themeToggleBtn: document.getElementById('themeToggleBtn'),
         durationValue: document.getElementById('durationValue'),
         durationMinusBtn: document.getElementById('durationMinusBtn'),
@@ -1057,7 +1064,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                const videos = await enrichWithDetails(videoIds.map(id => ({ videoId: id })));
+                // Fetch video details from YouTube API
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+                const data = await res.json();
+                const videos = data.items.map(item => ({
+                    videoId: item.id,
+                    title: item.snippet.title,
+                    thumb: item.snippet.thumbnails?.medium?.url,
+                    channelTitle: item.snippet.channelTitle,
+                    durationSeconds: parseISO8601Duration(item.contentDetails.duration),
+                    date: item.snippet.publishedAt
+                }));
                 videos.forEach(v => els.continueWatchingVideos.appendChild(videoCard(v)));
             })
             .catch(e => {
@@ -1067,6 +1084,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeContinueWatchingOverlay = () => {
         els.continueWatchingOverlay.classList.remove('show');
+    };
+
+    const showContinueWatchingView = async () => {
+        els.continueViewGrid.innerHTML = '';
+        showSkeletons(els.continueViewGrid, 12, 'video');
+        
+        if (!state.userId) {
+            els.continueViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Bitte melde dich an.</p>';
+            return;
+        }
+        
+        try {
+            const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('videoProgress')
+                .where('currentTime', '>', 0)
+                .orderBy('currentTime', 'desc')
+                .limit(30)
+                .get();
+            
+            els.continueViewGrid.innerHTML = '';
+            if (snapshot.empty) {
+                els.continueViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Keine angefangenen Videos.</p>';
+                return;
+            }
+            
+            const videoIds = snapshot.docs.map(d => d.id).filter(id => {
+                const progress = state.progressData.get(id);
+                return progress && progress.duration > 0 && (progress.currentTime / progress.duration) < 0.9;
+            });
+            
+            if (videoIds.length === 0) {
+                els.continueViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Keine angefangenen Videos.</p>';
+                return;
+            }
+            
+            // Fetch video details from YouTube API
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+            const data = await res.json();
+            const videos = data.items.map(item => ({
+                videoId: item.id,
+                title: item.snippet.title,
+                thumb: item.snippet.thumbnails?.medium?.url,
+                channelTitle: item.snippet.channelTitle,
+                durationSeconds: parseISO8601Duration(item.contentDetails.duration),
+                date: item.snippet.publishedAt
+            }));
+            videos.forEach(v => els.continueViewGrid.appendChild(videoCard(v)));
+        } catch (e) {
+            els.continueViewGrid.innerHTML = `<p style="color:var(--muted);padding:2rem;text-align:center;">Fehler: ${e.message}</p>`;
+        }
+    };
+
+    const showMyListView = async () => {
+        els.mylistViewGrid.innerHTML = '';
+        showSkeletons(els.mylistViewGrid, 12, 'video');
+        
+        if (!state.userId) {
+            els.mylistViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Bitte melde dich an.</p>';
+            return;
+        }
+        
+        try {
+            const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('myList')
+                .orderBy('addedAt', 'desc')
+                .limit(30)
+                .get();
+            
+            els.mylistViewGrid.innerHTML = '';
+            if (snapshot.empty) {
+                els.mylistViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Deine Liste ist leer. Füge Videos mit dem + Button hinzu.</p>';
+                return;
+            }
+            
+            const videoIds = snapshot.docs.map(d => d.id);
+            
+            // Fetch video details from YouTube API
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+            const data = await res.json();
+            const videos = data.items.map(item => ({
+                videoId: item.id,
+                title: item.snippet.title,
+                thumb: item.snippet.thumbnails?.medium?.url,
+                channelTitle: item.snippet.channelTitle,
+                durationSeconds: parseISO8601Duration(item.contentDetails.duration),
+                date: item.snippet.publishedAt
+            }));
+            videos.forEach(v => els.mylistViewGrid.appendChild(videoCard(v)));
+        } catch (e) {
+            els.mylistViewGrid.innerHTML = `<p style="color:var(--muted);padding:2rem;text-align:center;">Fehler: ${e.message}</p>`;
+        }
     };
 
     const getChannelInfo = async (identifier) => {
@@ -1122,10 +1228,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const setupProgressListener = () => {
         if (state.progressListenerUnsubscribe) state.progressListenerUnsubscribe();
-        if (!state.userId) {
-            els.continueWatchingSection.classList.add('hidden');
-            return;
-        }
+        if (!state.userId) return;
 
         state.progressListenerUnsubscribe = db.collection('users').doc(state.userId).collection('videoProgress')
             .orderBy('lastWatched', 'desc')
@@ -1134,60 +1237,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 snapshot.forEach(doc => newProgress.set(doc.id, doc.data()));
                 state.progressData = newProgress;
                 updateAllProgressBars();
-                renderContinueWatching();
             }, console.error);
-    };
-    
-    const renderContinueWatching = async () => {
-        if (!state.userId || state.progressData.size === 0) {
-            return els.continueWatchingSection.classList.add('hidden');
-        }
-
-        const unfinishedVideos = [];
-        for (const [videoId, progress] of state.progressData.entries()) {
-            if (progress.duration > 0 && (progress.currentTime / progress.duration) < 0.9) {
-                unfinishedVideos.push({ videoId, ...progress });
-            }
-        }
-        
-        if (unfinishedVideos.length === 0) {
-            return els.continueWatchingSection.classList.add('hidden');
-        }
-
-        const top8 = unfinishedVideos.slice(0, 8);
-        const idsToFetch = top8.filter(v => !state.videoDetailsCache.has(v.videoId)).map(v => v.videoId);
-
-        if (idsToFetch.length > 0) {
-            await delay(100);
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${idsToFetch.join(',')}&key=${YOUTUBE_API_KEY}`);
-            if (res.ok) {
-                const data = await res.json();
-                const newDetails = {};
-                data.items.forEach(item => {
-                    const detail = {
-                        title: item.snippet.title,
-                        thumb: item.snippet.thumbnails.medium.url,
-                        channelTitle: item.snippet.channelTitle,
-                        durationSeconds: parseISO8601Duration(item.contentDetails.duration),
-                    };
-                    state.videoDetailsCache.set(item.id, detail);
-                    newDetails[item.id] = detail;
-                });
-                if (Object.keys(newDetails).length > 0) {
-                    videoDetailsCacheRef.set({ videos: newDetails }, { merge: true });
-                }
-            }
-        }
-
-        els.continueWatchingGrid.innerHTML = '';
-        top8.forEach(v => {
-            const details = state.videoDetailsCache.get(v.videoId);
-            if (details) {
-                const date = v.lastWatched?.toDate ? v.lastWatched.toDate().toISOString() : new Date().toISOString();
-                els.continueWatchingGrid.appendChild(videoCard({ videoId: v.videoId, date, ...details }));
-            }
-        });
-        els.continueWatchingSection.classList.remove('hidden');
     };
 
     // ===== FIREBASE CACHE & HOMEPAGE LOGIC =====
@@ -1259,7 +1309,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return { view: parts[0], id: parts[1], tab: parts[2] };
     };
     const setView = name => {
-        ['homeView', 'channelView', 'privacyView', 'termsView', 'settingsView'].forEach(viewId => {
+        ['homeView', 'channelView', 'privacyView', 'termsView', 'settingsView', 'continueView', 'mylistView'].forEach(viewId => {
             if (els[viewId]) els[viewId].classList.add('hidden');
         });
         if (els[name + 'View']) els[name + 'View'].classList.remove('hidden');
@@ -1345,6 +1395,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (['home', 'privacy', 'terms', 'settings'].includes(r.view)) {
                 setView(r.view);
+            } else if (r.view === 'continue') {
+                setView('continue');
+                await showContinueWatchingView();
+            } else if (r.view === 'mylist') {
+                setView('mylist');
+                await showMyListView();
             } else if (r.view === 'channel' && r.id) {
                 setView('channel'); 
                 state.current.channelId = r.id; 
@@ -1535,10 +1591,20 @@ document.addEventListener('DOMContentLoaded', () => {
         els.playlistOverlay.onclick = (e) => { if (e.target === els.playlistOverlay) closePlaylist(); };
         els.myListClose.onclick = closeMyListOverlay;
         els.myListOverlay.onclick = (e) => { if (e.target === els.myListOverlay) closeMyListOverlay(); };
-        els.myListLink.onclick = (e) => { e.preventDefault(); showMyListOverlay(); };
+        els.myListLink.onclick = (e) => { 
+            e.preventDefault(); 
+            els.sideMenu.classList.remove('open');
+            els.menuOverlay.classList.add('hidden');
+            navigate('mylist'); 
+        };
         els.continueWatchingClose.onclick = closeContinueWatchingOverlay;
         els.continueWatchingOverlay.onclick = (e) => { if (e.target === els.continueWatchingOverlay) closeContinueWatchingOverlay(); };
-        els.continueWatchingLink.onclick = (e) => { e.preventDefault(); showContinueWatchingOverlay(); };
+        els.continueWatchingLink.onclick = (e) => { 
+            e.preventDefault(); 
+            els.sideMenu.classList.remove('open');
+            els.menuOverlay.classList.add('hidden');
+            navigate('continue'); 
+        };
         els.themeToggleBtn.onclick = toggleTheme;
 
         els.durationPlusBtn.onclick = () => {
@@ -1642,7 +1708,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.progressData.clear();
                 state.myList.clear();
                 updateAllProgressBars();
-                els.continueWatchingSection.classList.add('hidden');
                 state.bgImage = null;
                 applyBgImage();
             }
@@ -1675,4 +1740,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
