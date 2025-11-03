@@ -1681,49 +1681,88 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const loadBgImage = async () => {
-        if (state.userId) {
-            try {
-                const doc = await db.collection('users').doc(state.userId).collection('settings').doc('background').get();
-                if (doc.exists && doc.data().imageUrl) {
-                    state.bgImage = doc.data().imageUrl;
+        if (!state.userId) {
+            console.log('Kein User angemeldet - Hintergrundbild kann nicht geladen werden');
+            return;
+        }
+        
+        console.log('Lade Hintergrundbild für User:', state.userId);
+        try {
+            const doc = await db.collection('users').doc(state.userId).collection('settings').doc('background').get();
+            console.log('Firebase Dokument exists:', doc.exists);
+            
+            if (doc.exists) {
+                const data = doc.data();
+                console.log('Firebase Daten:', data);
+                
+                if (data && data.imageUrl) {
+                    state.bgImage = data.imageUrl;
                     applyBgImage();
-                    console.log('Hintergrundbild erfolgreich geladen!');
+                    console.log('✅ Hintergrundbild erfolgreich geladen! Größe:', (data.imageUrl.length / 1024).toFixed(2), 'KB');
                 } else {
-                    console.log('Kein gespeichertes Hintergrundbild gefunden');
+                    console.log('⚠️ Dokument existiert, aber imageUrl ist leer');
                 }
-            } catch (err) {
-                console.error('Fehler beim Laden des Hintergrundbilds:', err);
+            } else {
+                console.log('ℹ️ Kein gespeichertes Hintergrundbild gefunden');
             }
+        } catch (err) {
+            console.error('❌ Fehler beim Laden des Hintergrundbilds:', err);
         }
     };
     
     const saveBgImage = async () => {
-        if (state.userId) {
-            try {
-                await db.collection('users').doc(state.userId).collection('settings').doc('background').set({
-                    imageUrl: state.bgImage || null,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                console.log('Hintergrundbild erfolgreich gespeichert!');
-                showStatus('Hintergrundbild gespeichert!');
-            } catch (err) {
-                console.error('Fehler beim Speichern des Hintergrundbilds:', err);
-                showStatus('Fehler beim Speichern des Hintergrundbilds', true);
-            }
-        } else {
-            console.warn('Kein User angemeldet - Hintergrundbild nicht gespeichert');
+        if (!state.userId) {
+            console.warn('❌ Kein User angemeldet - Hintergrundbild nicht gespeichert');
             showStatus('Bitte melde dich an, um das Hintergrundbild zu speichern', true);
+            return;
+        }
+        
+        console.log('Speichere Hintergrundbild für User:', state.userId);
+        console.log('Bildgröße:', state.bgImage ? (state.bgImage.length / 1024).toFixed(2) + ' KB' : 'null');
+        
+        try {
+            const docRef = db.collection('users').doc(state.userId).collection('settings').doc('background');
+            await docRef.set({
+                imageUrl: state.bgImage || null,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: false }); // merge: false überschreibt komplett
+            
+            console.log('✅ Hintergrundbild erfolgreich in Firebase gespeichert!');
+            showStatus('Hintergrundbild gespeichert!');
+            
+            // Verifizierung: Lade das Bild direkt wieder
+            const verifyDoc = await docRef.get();
+            if (verifyDoc.exists) {
+                console.log('✅ Verifizierung: Dokument existiert in Firebase');
+                const verifyData = verifyDoc.data();
+                if (verifyData && verifyData.imageUrl) {
+                    console.log('✅ Verifizierung: imageUrl ist vorhanden, Größe:', (verifyData.imageUrl.length / 1024).toFixed(2), 'KB');
+                } else {
+                    console.warn('⚠️ Verifizierung: imageUrl ist leer!');
+                }
+            }
+        } catch (err) {
+            console.error('❌ Fehler beim Speichern des Hintergrundbilds:', err);
+            showStatus('Fehler beim Speichern des Hintergrundbilds', true);
         }
     };
     
     const handleBgImageUpload = (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file) {
+            console.log('Kein Bild ausgewählt');
+            return;
+        }
+        
+        console.log('📸 Bild ausgewählt:', file.name, 'Größe:', (file.size / 1024).toFixed(2), 'KB');
         
         if (!state.userId) {
+            console.warn('❌ Kein User angemeldet');
             showStatus('Bitte melde dich an, um das Hintergrundbild zu speichern', true);
             return;
         }
+        
+        console.log('✅ User angemeldet:', state.userId);
         
         // Maximale Dateigröße: 5MB (vernünftiger Wert für Geschwindigkeit)
         if (file.size > 5 * 1024 * 1024) {
@@ -1731,11 +1770,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        console.log('🔄 Konvertiere Bild zu Base64...');
         const reader = new FileReader();
         reader.onload = async (event) => {
+            console.log('✅ Bild konvertiert, Base64 Größe:', (event.target.result.length / 1024).toFixed(2), 'KB');
             state.bgImage = event.target.result;
+            console.log('✅ state.bgImage gesetzt');
             applyBgImage();
+            console.log('✅ Bild angewendet, starte Speicherung...');
             await saveBgImage();
+            console.log('✅ Upload-Prozess abgeschlossen!');
+        };
+        reader.onerror = (err) => {
+            console.error('❌ Fehler beim Lesen des Bildes:', err);
         };
         reader.readAsDataURL(file);
     };
@@ -1862,12 +1909,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const wasLoggedIn = !!state.user;
             state.user = user; state.userId = user?.uid;
             
+            console.log('🔐 Auth State Changed:', user ? `Angemeldet als ${user.displayName} (${user.uid})` : 'Abgemeldet');
+            
             els.authBtn.textContent = user ? 'Abmelden' : 'Anmelden';
             els.userAvatar.classList.toggle('hidden', !user);
             els.userName.textContent = user ? user.displayName : '';
             if (user) els.userAvatar.src = user.photoURL;
 
             if (user) {
+                console.log('✅ User angemeldet - lade Daten...');
                 setupProgressListener();
                 loadBgImage();
                 loadMyList();
@@ -1908,4 +1958,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
