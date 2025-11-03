@@ -27,11 +27,11 @@
     body.text-light .btn:hover { background:rgba(216,216,216,0.85); color:#000; }
     body.text-light .btn.active { background:var(--accent); color:#fff; border-color: var(--accent); }
     body.text-light .searchbar { 
-        background:rgba(255,255,255,0.7); border-color:rgba(208,208,208,0.6); 
-        color:#1a1a1a; backdrop-filter: blur(10px);
+        background:rgba(255,255,255,0.5); border-color:rgba(0,0,0,0.1); 
+        color:#1a1a1a; backdrop-filter: blur(12px);
     }
     body.text-light .searchbar input { 
-        color:#1a1a1a; background:rgba(255,255,255,0.5); 
+        color:#1a1a1a; background:rgba(255,255,255,0.4); 
         border-color:rgba(0,0,0,0.1);
     }
     body.text-light .searchbar input::placeholder { color: rgba(0,0,0,0.5); }
@@ -40,26 +40,33 @@
         backdrop-filter: blur(10px);
     }
     body.text-light .tab:hover { background:rgba(216,216,216,0.85); }
-    body.text-light .side-menu { background:#ffffff; border-left-color:#d0d0d0; }
+    body.text-light .side-menu { background:rgba(255,255,255,0.5); backdrop-filter: blur(12px); border-left-color:rgba(0,0,0,0.1); }
     body.text-light .skeleton { background:linear-gradient(90deg, #e8e8e8 25%, #f0f0f0 50%, #e8e8e8 75%); }
-    body.text-light details summary { background-color:#fff; color:#1a1a1a; border-color:#d0d0d0; }
-    body.text-light details { border-color:#d0d0d0; background-color:#fff; }
-    body.text-light details summary:hover { background-color:#f8f8f8; }
     body.text-light .tab { background:#e8e8e8; border-color:#d0d0d0; color:#1a1a1a; transition: all 0.2s ease; }
     body.text-light .tab:hover { background:#d8d8d8; }
     body.text-light .tab.active { background:var(--accent); color:#fff; border-color: var(--accent); }
-    body.text-light .loadmore { background:#e8e8e8; color:#1a1a1a; border-color:#d0d0d0; transition: all 0.2s ease; }
-    body.text-light .loadmore:hover { background:#d8d8d8; }
+    body.text-light .loadmore { 
+        background: rgba(255,255,255,0.5); 
+        backdrop-filter: blur(12px);
+        color:#1a1a1a; 
+        border-color:rgba(0,0,0,0.1); 
+        transition: all 0.2s ease; 
+    }
+    body.text-light .loadmore:hover { 
+        background: rgba(255,255,255,0.65); 
+        border-color:rgba(0,0,0,0.2); 
+    }
     body.text-light .modal { background:#ffffff; border-color:#d0d0d0; color:#1a1a1a; }
     body.text-light .modal-header { border-bottom-color:#d0d0d0; color:#1a1a1a; }
     body.text-light .modal-header .btn { color:#1a1a1a; }
     body.text-light footer { border-top-color:#d0d0d0; color:#666; }
-    body.text-light footer a { color:#0066ff; }
-    body.text-light .setting-group { background:#ffffff; border-color:#d0d0d0; }
+    body.text-light.has-bg-image footer a { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    body.text-light.has-bg-image footer a:hover { color: #f0f0f0; }
+    body.text-light .setting-group { background:rgba(255,255,255,0.5); backdrop-filter: blur(12px); border-color:rgba(0,0,0,0.1); }
     body.text-light .setting-label { color:#1a1a1a; }
     body.text-light .setting-hint { color:#666; }
-    body.text-light .toggle-btn { background:#e8e8e8; border-color:#d0d0d0; color:#1a1a1a; }
-    body.text-light .toggle-btn:hover { background:#d8d8d8; }
+    body.text-light .toggle-btn { background:rgba(255,255,255,0.5); backdrop-filter: blur(12px); border-color:rgba(0,0,0,0.1); color:#1a1a1a; }
+    body.text-light .toggle-btn:hover { background:rgba(255,255,255,0.65); }
     body.text-light .toggle-btn.active { background:var(--accent); border-color: var(--accent); color:#fff; }
 
     .duration-adjuster-container {
@@ -99,12 +106,12 @@
     body.text-light .text-page p, body.text-light .text-page ul { color:#333; }
     body.text-light .text-page a { color:#0066ff; }
     body.text-light .video-card, body.text-light .chan-card { 
-        background:rgba(255,255,255,0.7); border-color:rgba(208,208,208,0.6); 
+        background:rgba(255,255,255,0.5); border-color:rgba(0,0,0,0.1); 
         backdrop-filter: blur(12px);
     }
     body.text-light .video-card:hover, body.text-light .chan-card:hover { 
         box-shadow: 0 15px 35px rgba(0,0,0,.15); 
-        background:rgba(255,255,255,0.85);
+        background:rgba(255,255,255,0.65);
     }
     body.text-light .thumb { background:#e8e8e8; }
     body.text-light .chan-thumb { background:#e8e8e8; }
@@ -119,6 +126,25 @@
     .btn{border:none;background:rgba(37,37,37,0.7);color:#eee;border:1px solid rgba(47,47,47,0.6);padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem;white-space:nowrap; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; backdrop-filter: blur(8px);}
     .btn:hover{transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3);}
     .btn:active{transform: translateY(0);}
+    .loadmore {
+        background: rgba(15,15,15,0.5);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 16px 32px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin: 20px auto;
+        display: block;
+        width: fit-content;
+        min-width: 250px;
+        border-radius: 12px;
+    }
+    .loadmore:hover {
+        background: rgba(37,37,37,0.85);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        border-color: rgba(255,255,255,0.2);
+    }
     .btn.active{background:var(--accent);border-color:transparent;color:#fff}
     #refreshBtn.loading svg { animation: spin 1s linear infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -126,30 +152,32 @@
     .section{margin-top:14px; animation: fadeIn 0.3s ease-in-out;}
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .section h2{
-        font-size:1.05rem;margin:.25rem 4px; transition: color 0.3s ease;
+        font-size:1.05rem;margin:.25rem 4px; transition: all 0.3s ease;
         text-shadow: 0 2px 8px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6);
-        padding: 8px 12px;
-        background: rgba(0,0,0,0.3);
-        backdrop-filter: blur(8px);
-        border-radius: 8px;
+        padding: 12px 16px;
+        background: rgba(15,15,15,0.5);
+        backdrop-filter: blur(12px);
+        border-radius: 12px;
         display: inline-block;
+        border: 1px solid rgba(255,255,255,0.1);
     }
     body.text-light .section h2{
         text-shadow: 0 2px 8px rgba(255,255,255,0.9), 0 0 20px rgba(255,255,255,0.7);
-        background: rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.5);
+        border: 1px solid rgba(0,0,0,0.1);
     }
     .grid{display:grid;gap:12px}
     .grid.cols-channels{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
     .grid.cols-vids{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
     
     .chan-card{
-        background:rgba(15,15,15,0.7);border:1px solid rgba(38,38,38,0.6);border-radius:var(--radius);
+        background:rgba(15,15,15,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius);
         overflow:hidden;box-shadow:var(--shadow);padding:12px;
         backdrop-filter: blur(12px);
         display:flex; flex-direction: column; gap:8px; align-items:center; text-align:center; cursor:pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
-    .chan-card:hover{transform: translateY(-4px); box-shadow: 0 15px 35px rgba(0,0,0,.45); background:rgba(20,20,20,0.8);}
+    .chan-card:hover{transform: translateY(-4px); box-shadow: 0 15px 35px rgba(0,0,0,.45); background:rgba(20,20,20,0.7);}
     .chan-thumb{width:48px;height:48px;border-radius:50%;background:#2b2b2b;overflow:hidden;flex:0 0 auto}
     .chan-thumb img{width:100%;height:100%;object-fit:cover;display:block}
     .chan-meta{display:flex;flex-direction:column;gap:2px}
@@ -157,12 +185,12 @@
     .chan-card .sub { font-size: 0.8rem;color:var(--muted) }
 
     .video-card{
-        background:rgba(15,15,15,0.7);border:1px solid rgba(38,38,38,0.6);
+        background:rgba(15,15,15,0.5);border:1px solid rgba(255,255,255,0.1);
         border-radius:calc(var(--radius) + 2px);overflow:hidden;box-shadow:var(--shadow); 
         backdrop-filter: blur(12px);
         cursor:pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
-    .video-card:hover{transform: translateY(-4px); box-shadow: 0 15px 35px rgba(0,0,0,.45); background:rgba(20,20,20,0.8);}
+    .video-card:hover{transform: translateY(-4px); box-shadow: 0 15px 35px rgba(0,0,0,.45); background:rgba(20,20,20,0.7);}
     .thumb{position:relative;aspect-ratio:16/9;background:#222; overflow:hidden;}
     .thumb img{transition: transform 0.3s ease;}
     .video-card:hover .thumb img{transform: scale(1.05);}
@@ -170,15 +198,28 @@
     .progress-bar-container{position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.2)}
     .progress-bar{height:100%;width:0%;background:var(--accent)}
     .chip{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border-radius:4px;padding:.2rem .5rem;font-size:.75rem}
+    .mark-watched-btn{
+        position:absolute;top:8px;right:8px;
+        width:32px;height:32px;border-radius:50%;
+        background:rgba(0,0,0,0.7);border:2px solid rgba(255,255,255,0.3);
+        color:#fff;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;
+        transition:all 0.2s ease;
+        backdrop-filter:blur(8px);
+        z-index:10;
+    }
+    .mark-watched-btn:hover{background:rgba(0,0,0,0.9);border-color:var(--accent);transform:scale(1.1);}
+    .mark-watched-btn.watched{background:var(--accent);border-color:var(--accent);}
+    .mark-watched-btn.watched:hover{background:#cc0033;}
     .card-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
     .title{font-weight:700;font-size:.98rem;line-height:1.25;color:var(--text)}
     .meta{color:var(--muted);font-size:.85rem; display: flex; justify-content: space-between;}
     .tabs{display:flex;gap:8px;margin:8px 4px}
     .tab{
         padding:.5rem .8rem;border-radius:999px;
-        background:rgba(29,29,29,0.7);border:1px solid rgba(42,42,42,0.6);
+        background:rgba(15,15,15,0.7);border:1px solid rgba(255,255,255,0.1);
         cursor:pointer; transition: all 0.2s ease;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px);
     }
     .tab:hover { background:rgba(37,37,37,0.85); transform: translateY(-2px); }
     .tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -199,12 +240,12 @@
     
     .searchbar{
         display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px;
-        background:rgba(18,18,18,0.7);border:1px solid rgba(38,38,38,0.6);
+        background:rgba(15,15,15,0.5);border:1px solid rgba(255,255,255,0.1);
         border-radius:var(--radius);margin:6px 4px; transition: all 0.2s ease;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px);
     }
     .searchbar input{
-        flex:1;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);
+        flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);
         color:#fff;outline:none;font-size:1rem; transition: all 0.3s ease;
         padding: 8px 12px; border-radius: 8px;
     }
@@ -216,33 +257,50 @@
     .overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200; animation: fadeIn 0.2s ease; }
     .overlay.show{display:flex}
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .modal{width:95%;max-width:960px;max-height:95%;margin:auto;background:#0b0b0b;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5);display:flex;flex-direction:column; animation: slideUp 0.3s ease; }
+    .modal{
+        width:96%;max-width:1400px;max-height:90vh;margin:auto;
+        background:rgba(11,11,11,0.95);border:1px solid rgba(42,42,42,0.8);
+        border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.7);
+        display:flex;flex-direction:column; animation: slideUp 0.3s ease;
+        backdrop-filter: blur(20px);
+    }
     @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid rgba(42,42,42,0.6);backdrop-filter:blur(10px);}
+    .modal-body{flex:1;overflow-y:auto;position:relative;}
+    #player-mount{width:100%;aspect-ratio:16/9;background:#000;}
     details { 
-        border: 1px solid rgba(42,42,42,0.4); 
+        border: 1px solid rgba(255,255,255,0.1); 
         border-radius: var(--radius); 
         margin-top: 1rem; 
         transition: all 0.3s ease;
-        background: rgba(0,0,0,0.2);
-        backdrop-filter: blur(10px);
+        background: rgba(15,15,15,0.3);
+        backdrop-filter: blur(12px);
     }
-    details[open] { background: rgba(0,0,0,0.3); }
+    details[open] { background: rgba(15,15,15,0.3); }
     summary { 
         cursor: pointer; padding: 1rem; font-weight: bold; transition: all 0.2s ease;
         background: transparent;
         text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+        border-radius: var(--radius);
     }
     summary:hover { background-color: rgba(255,255,255,0.05); }
     body.text-light details {
-        border: 1px solid rgba(208,208,208,0.6);
+        border: 1px solid rgba(0,0,0,0.1);
         background: rgba(255,255,255,0.3);
+        backdrop-filter: blur(12px);
     }
-    body.text-light details[open] { background: rgba(255,255,255,0.4); }
+    body.text-light details[open] { 
+        background: rgba(255,255,255,0.3); 
+        backdrop-filter: blur(12px);
+    }
     body.text-light summary {
         background: transparent;
         text-shadow: 0 2px 6px rgba(255,255,255,0.9);
+        color: #1a1a1a;
     }
-    body.text-light summary:hover { background-color: rgba(0,0,0,0.05); }
+    body.text-light summary:hover { 
+        background-color: rgba(0,0,0,0.05); 
+    }
     .details-content { padding: 0 1rem 1rem 1rem; animation: slideDown 0.3s ease; }
     .side-menu {
         position: fixed;
@@ -250,8 +308,9 @@
         right: 0;
         width: 280px;
         height: 100%;
-        background: #141414;
-        border-left: 1px solid #2a2a2a;
+        background: rgba(15,15,15,0.5);
+        backdrop-filter: blur(12px);
+        border-left: 1px solid rgba(255,255,255,0.1);
         transform: translateX(100%);
         transition: transform 0.3s ease-in-out;
         z-index: 300;
@@ -286,15 +345,21 @@
     .menu-links { margin-top: 30px; border-top: 1px solid #2a2a2a; padding-top: 20px; }
     .menu-link { 
       display: block; padding: 12px; margin: 5px 0; text-decoration: none; color: var(--text);
-      border-radius: 8px; transition: background 0.2s ease; font-size: 0.95rem;
+      border-radius: 8px; transition: all 0.2s ease; font-size: 0.95rem;
+      background: rgba(37,37,37,0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.05);
     }
-    .menu-link:hover { background: rgba(255,255,255,0.05); }
+    .menu-link:hover { background: rgba(255,255,255,0.1); transform: translateX(-3px); }
     
     /* Settings Page */
     .settings-section { margin-top: 20px; }
     .settings-section h3 { font-size: 1.1rem; margin: 20px 4px 15px; border-bottom: 1px solid #2a2a2a; padding-bottom: 8px; }
     .setting-group { 
-      background: var(--card); border: 1px solid #2a2a2a; border-radius: var(--radius);
+      background: rgba(15,15,15,0.5); 
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1); 
+      border-radius: var(--radius);
       padding: 20px; margin-bottom: 15px;
     }
     .setting-label { display: block; font-weight: 600; margin-bottom: 12px; font-size: 0.95rem; }
@@ -302,10 +367,13 @@
     
     .toggle-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
     .toggle-btn { 
-      padding: 8px 16px; border-radius: 8px; border: 1px solid #2a2a2a; background: #1a1a1a;
+      padding: 8px 16px; border-radius: 8px; 
+      border: 1px solid rgba(255,255,255,0.1); 
+      background: rgba(15,15,15,0.5);
+      backdrop-filter: blur(12px);
       color: var(--text); cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem;
     }
-    .toggle-btn:hover { background: #252525; }
+    .toggle-btn:hover { background: rgba(37,37,37,0.85); transform: translateY(-2px); }
     .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
     
     .color-palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
@@ -557,6 +625,19 @@
     </div>
 </div>
 
+<div class="overlay" id="playlistOverlay" role="dialog">
+    <div class="modal">
+        <div class="modal-header">
+          <strong id="playlistTitle">Playlist</strong>
+          <button class="btn" id="playlistClose">Schließen</button>
+        </div>
+        <div class="modal-body" style="padding: 1rem;">
+          <div id="playlistVideos" class="grid cols-vids"></div>
+          <button id="morePlaylistVideosBtn" class="loadmore hidden">Mehr Videos laden</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ===== YOUTUBE IFRAME API =====
 var tag = document.createElement('script');
@@ -625,7 +706,10 @@ document.addEventListener('DOMContentLoaded', () => {
         playerClose: document.getElementById('playerClose'),
         playerMount: document.getElementById('player-mount'), 
         playerTitle: document.getElementById('playerTitle'),
-        playlistTitle: document.getElementById('playlistTitle'), playlistVideos: document.getElementById('playlistVideos'),
+        playlistOverlay: document.getElementById('playlistOverlay'),
+        playlistClose: document.getElementById('playlistClose'),
+        playlistTitle: document.getElementById('playlistTitle'), 
+        playlistVideos: document.getElementById('playlistVideos'),
         morePlaylistVideosBtn: document.getElementById('morePlaylistVideosBtn'), 
         homeBtn: document.getElementById('homeBtn'), 
         refreshBtn: document.getElementById('refreshBtn'), 
@@ -747,17 +831,30 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const progress = state.progressData.get(v.videoId);
         let progressPercent = progress?.duration > 0 ? Math.min((progress.currentTime / progress.duration) * 100, 100) : 0;
+        const isWatched = progressPercent >= 90;
 
         card.innerHTML = `
             <div class="thumb">
                 <img loading="lazy" src="${v.thumb || ''}" alt="">
                 ${v.date ? `<span class="chip">${fmtDate(new Date(v.date))}</span>` : ''}
                 <div class="progress-bar-container"><div class="progress-bar" style="width: ${progressPercent}%"></div></div>
+                <button class="mark-watched-btn ${isWatched ? 'watched' : ''}" title="Als angeschaut markieren">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                    </svg>
+                </button>
             </div>
             <div class="card-body">
                 <div class="title">${v.title || '?'}</div>
                 <div class="meta"><span>${v.channelTitle || 'Video'}</span><span>${formatDuration(v.durationSeconds)}</span></div>
             </div>`;
+        
+        const markBtn = card.querySelector('.mark-watched-btn');
+        markBtn.onclick = (e) => {
+            e.stopPropagation();
+            markAsWatched(v.videoId, v.durationSeconds);
+        };
+        
         card.onclick = () => openPlayer(v.videoId, v.title); 
         return card;
     };
@@ -766,7 +863,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = document.createElement('div');
         card.className = 'video-card';
         card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta"><span>Playlist</span></div></div>`;
-        card.onclick = () => alert('Playlist-Ansicht noch nicht implementiert.');
+        card.onclick = () => openPlaylist(p.playlistId, p.title);
         return card;
     };
 
@@ -789,6 +886,17 @@ document.addEventListener('DOMContentLoaded', () => {
             lastWatched: firebase.firestore.FieldValue.serverTimestamp()
         };
         db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set(data, { merge: true });
+    };
+    
+    const markAsWatched = (videoId, duration) => {
+        if (!state.userId || !videoId) {
+            alert('Bitte melde dich an, um Videos als angeschaut zu markieren.');
+            return;
+        }
+        // Setze Fortschritt auf 100%
+        saveProgress(videoId, duration, duration);
+        // Update UI sofort
+        updateAllProgressBars();
     };
 
     const getChannelInfo = async (identifier) => {
@@ -1019,6 +1127,45 @@ document.addEventListener('DOMContentLoaded', () => {
         els.overlay.classList.remove('show');
     };
     
+    const openPlaylist = async (playlistId, title) => {
+        els.playlistTitle.textContent = title || 'Playlist';
+        els.playlistOverlay.classList.add('show');
+        els.playlistVideos.innerHTML = '';
+        showSkeletons(els.playlistVideos, 8, 'video');
+        
+        try {
+            const params = new URLSearchParams({ 
+                key: YOUTUBE_API_KEY, part: 'snippet', 
+                playlistId, maxResults: 20 
+            });
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?${params}`);
+            if (!res.ok) throw new Error('Fehler beim Laden der Playlist');
+            const data = await res.json();
+            
+            let items = (data.items || []).filter(it => it.snippet?.thumbnails);
+            items = await enrichVideosWithDuration(items, 'snippet');
+            
+            els.playlistVideos.innerHTML = '';
+            items.forEach(it => {
+                const v = {
+                    videoId: it.snippet.resourceId.videoId,
+                    title: it.snippet.title,
+                    date: it.snippet.publishedAt,
+                    thumb: it.snippet.thumbnails?.medium?.url,
+                    channelTitle: it.snippet.channelTitle,
+                    durationSeconds: it.durationSeconds
+                };
+                els.playlistVideos.appendChild(videoCard(v));
+            });
+        } catch(e) {
+            els.playlistVideos.innerHTML = `<p style="color:var(--muted);padding:2rem;text-align:center;">Fehler: ${e.message}</p>`;
+        }
+    };
+    
+    const closePlaylist = () => {
+        els.playlistOverlay.classList.remove('show');
+    };
+    
     const handleRoute = async () => {
         const r = parseRoute();
         hideStatus();
@@ -1211,6 +1358,8 @@ document.addEventListener('DOMContentLoaded', () => {
         els.backBtn.onclick = () => history.back();
         els.forwardBtn.onclick = () => history.forward();
         els.playerClose.onclick = closePlayer;
+        els.playlistClose.onclick = closePlaylist;
+        els.playlistOverlay.onclick = (e) => { if (e.target === els.playlistOverlay) closePlaylist(); };
         els.themeToggleBtn.onclick = toggleTheme;
 
         els.durationPlusBtn.onclick = () => {
