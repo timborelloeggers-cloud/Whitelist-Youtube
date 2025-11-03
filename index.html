@@ -1722,15 +1722,31 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const docRef = db.collection('users').doc(state.userId).collection('settings').doc('background');
+            
+            // WICHTIG: Erst das alte Dokument komplett löschen
+            console.log('🗑️ Lösche altes Dokument...');
+            try {
+                await docRef.delete();
+                console.log('✅ Altes Dokument gelöscht');
+            } catch (deleteErr) {
+                console.log('ℹ️ Kein altes Dokument zum Löschen (ist okay)');
+            }
+            
+            // Warte kurz (Firestore Delay)
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Jetzt das neue Bild speichern
+            console.log('💾 Speichere neues Bild...');
             await docRef.set({
                 imageUrl: state.bgImage || null,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: false }); // merge: false überschreibt komplett
+            });
             
             console.log('✅ Hintergrundbild erfolgreich in Firebase gespeichert!');
             showStatus('Hintergrundbild gespeichert!');
             
             // Verifizierung: Lade das Bild direkt wieder
+            await new Promise(resolve => setTimeout(resolve, 200));
             const verifyDoc = await docRef.get();
             if (verifyDoc.exists) {
                 console.log('✅ Verifizierung: Dokument existiert in Firebase');
@@ -1780,6 +1796,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('✅ Bild angewendet, starte Speicherung...');
             await saveBgImage();
             console.log('✅ Upload-Prozess abgeschlossen!');
+            
+            // Reset File Input für nächsten Upload
+            e.target.value = '';
         };
         reader.onerror = (err) => {
             console.error('❌ Fehler beim Lesen des Bildes:', err);
@@ -1787,12 +1806,48 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
     };
     
-    const removeBgImage = () => {
+    const removeBgImage = async () => {
+        console.log('🗑️ Lösche Hintergrundbild...');
         state.bgImage = null;
         applyBgImage();
-        saveBgImage();
+        
+        if (state.userId) {
+            try {
+                // Lösche das komplette Dokument (nicht nur den Wert)
+                await db.collection('users').doc(state.userId).collection('settings').doc('background').delete();
+                console.log('✅ Hintergrundbild-Dokument komplett aus Firebase gelöscht');
+                showStatus('Hintergrundbild entfernt');
+            } catch (err) {
+                console.error('❌ Fehler beim Löschen:', err);
+            }
+        }
     };
     
+    // DEBUG: Temporäre Funktion zum Zurücksetzen des Hintergrundbilds
+    window.resetBgImage = async () => {
+        if (!state.userId) {
+            console.error('❌ Nicht angemeldet');
+            alert('Bitte melde dich erst an!');
+            return;
+        }
+        
+        console.log('🔄 RESET: Lösche altes Hintergrundbild komplett...');
+        try {
+            const docRef = db.collection('users').doc(state.userId).collection('settings').doc('background');
+            await docRef.delete();
+            console.log('✅ Dokument gelöscht');
+            
+            state.bgImage = null;
+            applyBgImage();
+            console.log('✅ State und UI zurückgesetzt');
+            
+            alert('✅ Hintergrundbild komplett zurückgesetzt! Jetzt kannst du ein neues hochladen.');
+        } catch (err) {
+            console.error('❌ Fehler:', err);
+            alert('Fehler beim Zurücksetzen: ' + err.message);
+        }
+    };
+
     // ===== EVENT LISTENERS =====
     const setupEventListeners = () => {
         window.onhashchange = handleRoute;
