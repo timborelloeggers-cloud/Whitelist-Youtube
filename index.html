@@ -105,6 +105,25 @@
     body.text-light .text-page h2, body.text-light .text-page h3 { color:#1a1a1a; border-bottom-color:#d0d0d0; }
     body.text-light .text-page p, body.text-light .text-page ul { color:#333; }
     body.text-light .text-page a { color:#0066ff; }
+    body.text-light .text-content {
+        background: rgba(255,255,255,0.5);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    body.text-light .searchbar {
+        background: rgba(255,255,255,0.5);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    body.text-light .searchbar input {
+        background: rgba(255,255,255,0.6);
+        border: 1px solid rgba(0,0,0,0.1);
+        color: #1a1a1a;
+    }
+    body.text-light .searchbar input::placeholder {
+        color: rgba(0,0,0,0.5);
+    }
+    body.text-light .searchbar input:focus {
+        background: rgba(255,255,255,0.8);
+    }
     body.text-light .video-card, body.text-light .chan-card { 
         background:rgba(255,255,255,0.5); border-color:rgba(0,0,0,0.1); 
         backdrop-filter: blur(12px);
@@ -172,7 +191,7 @@
     .grid.cols-vids{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
     
     @media (max-width: 480px) {
-        .grid.cols-channels{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+        .grid.cols-channels{grid-template-columns:repeat(2,1fr);}
     }
     
     .chan-card{
@@ -232,46 +251,101 @@
     .card-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
     .title{font-weight:700;font-size:.98rem;line-height:1.25;color:var(--text)}
     .meta{color:var(--muted);font-size:.85rem; display: flex; justify-content: space-between;}
-    .tabs{display:flex;gap:8px;margin:8px 4px}
-    .tab{
-        padding:.5rem .8rem;border-radius:999px;
-        background:rgba(15,15,15,0.7);border:1px solid rgba(255,255,255,0.1);
-        cursor:pointer; transition: all 0.2s ease;
-        backdrop-filter: blur(12px);
+    .tabs{
+        display: flex;
+        gap: 8px;
+        margin: 0 0 16px 0;
     }
-    .tab:hover { background:rgba(37,37,37,0.85); transform: translateY(-2px); }
-    .tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+    .tab{
+        padding: 12px 24px;
+        border-radius: 10px;
+        background: rgba(15,15,15,0.5);
+        border: 1px solid rgba(255,255,255,0.1);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(12px);
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    .tab:hover { background: rgba(37,37,37,0.7); transform: translateY(-2px); }
+    .tab.active{
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(255,0,51,0.3);
+    }
     
     /* Channel Banner */
-    #channelBannerContainer { position: relative; width: 100%; height: 180px; overflow: hidden; border-radius: var(--radius); margin: 6px 4px; }
-    #channelBannerBackground { 
-        position: absolute; inset: 0; 
-        background-size: cover; background-position: center;
-        filter: blur(20px) brightness(0.6);
-        transform: scale(1.1);
+    #channelName { 
+        font-size: 1.8rem; 
+        font-weight: 700; 
+        color: var(--text);
+        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-    #channelBanner {
-        position: absolute; inset: 0;
-        background-size: cover; background-position: center;
-        filter: brightness(0.8);
+    #channelBannerContainer { 
+        position: relative; 
+        width: 100%; 
+        height: 200px; 
+        overflow: hidden; 
+        border-radius: 12px; 
+        margin: 0 0 16px 0;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    #channelBannerBackground { 
+        position: absolute; 
+        inset: 0; 
+        background-size: cover; 
+        background-position: center;
+        filter: blur(15px) brightness(0.5);
+        transform: scale(1.15);
     }
     
     .searchbar{
-        display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px;
-        background:rgba(15,15,15,0.5);border:1px solid rgba(255,255,255,0.1);
-        border-radius:var(--radius);margin:6px 4px; transition: all 0.2s ease;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 10px;
+        background: rgba(15,15,15,0.5);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        margin: 0 0 12px 0;
+        transition: all 0.2s ease;
         backdrop-filter: blur(12px);
     }
     .searchbar input{
-        flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);
-        color:#fff;outline:none;font-size:1rem; transition: all 0.3s ease;
-        padding: 8px 12px; border-radius: 8px;
+        flex: 1;
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        outline: none;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        padding: 10px 14px;
+        border-radius: 8px;
+        min-width: 0;
     }
     .searchbar input::placeholder { color: rgba(255,255,255,0.5); }
-    .searchbar:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,0,51,0.1); }
-    .sort-options{display:flex;gap:6px;width:100%;padding:4px 0 0 8px; animation: slideDown 0.3s ease;}
+    .searchbar input:focus { border-color: var(--accent); background: rgba(0,0,0,0.5); }
+    .searchbar .btn { 
+        padding: 10px 16px; 
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .searchbar .btn svg { margin: 0; }
+    .sort-options{
+        display: flex;
+        gap: 6px;
+        width: 100%;
+        padding: 8px 0 0 0;
+        animation: slideDown 0.3s ease;
+        flex-wrap: wrap;
+    }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .searchbar .btn, .sort-options .btn { padding:.35rem .7rem; font-size:.85rem; transition: all 0.2s ease; }
+    .sort-options .btn { padding: 8px 14px; font-size: 0.85rem; transition: all 0.2s ease; }
     .overlay { position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:200; animation: fadeIn 0.2s ease; }
     .overlay.show{display:flex}
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -442,6 +516,17 @@
     .text-page p, .text-page ul { color: var(--muted); transition: color 0.3s ease; }
     .text-page a { color: var(--accent); text-decoration: none; transition: all 0.2s ease; }
     .text-page a:hover { text-decoration: underline; opacity: 0.8; }
+    .text-content {
+        background: rgba(15,15,15,0.5);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin: 12px 0;
+    }
+    .text-content h2:first-child {
+        margin-top: 0;
+    }
     
     /* Loading Skeleton Styles */
     .skeleton { background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%); background-size: 200% 100%; animation: loading 1.5s ease-in-out infinite; border-radius: 8px; }
@@ -519,15 +604,17 @@
     </div>
   </section>
   <section id="channelView" class="section hidden">
+    <h2 id="channelName" style="margin: 0 4px 12px 4px;"></h2>
     <div id="channelBannerContainer" class="hidden">
         <div id="channelBannerBackground"></div>
-        <div id="channelBanner"></div>
     </div>
     <div class="searchbar">
-      <div class="input-wrapper">
-        <input id="searchInput" placeholder="Im Kanal suchen…"/>
-        <button class="btn" id="searchBtn">Suchen</button>
-      </div>
+      <input id="searchInput" placeholder="Im Kanal suchen…"/>
+      <button class="btn" id="searchBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+        </svg>
+      </button>
       <div class="sort-options hidden" id="sortOptions">
         <span class="sub">Sortieren:</span>
         <button class="btn active" data-sort="date">Neueste</button>
@@ -539,7 +626,6 @@
       <button class="tab" data-tab="videos">Videos</button>
       <button class="tab" data-tab="playlists">Playlists</button>
     </div>
-    <div id="channelMeta" class="sub" style="margin:6px 4px; padding:10px 12px; background:rgba(0,0,0,0.3); backdrop-filter:blur(10px); border-radius:8px; display:inline-block;"></div>
     <div id="videosTab" class="grid cols-vids"></div>
     <button id="moreVideosBtn" class="loadmore hidden">Mehr Videos laden</button>
     <div id="playlistsTab" class="grid cols-vids hidden"></div>
@@ -547,42 +633,46 @@
   </section>
   <section id="privacyView" class="section text-page hidden">
     <h2>Datenschutzerklärung</h2>
-    <h3>1. Allgemeines</h3>
-    <p>Diese Datenschutzerklärung erläutert, wie YouTube Whitelist deine persönlichen Daten erhebt, nutzt und schützt.</p>
-    
-    <h3>2. Daten die wir erheben</h3>
-    <ul>
-      <li><strong>Google-Kontodaten:</strong> Name, E-Mail, Profilfoto (über Firebase Authentication)</li>
-      <li><strong>Video-Fortschritt:</strong> Welche Videos du schaust, wie weit du fortgeschritten bist</li>
-      <li><strong>Einstellungen:</strong> Deine Farbpräferenzen, Hintergrundbilder, Text-Modus-Einstellungen</li>
-      <li><strong>Favoriten:</strong> Deine ausgewählten Kanäle und deren Einstellungen</li>
-    </ul>
-    
-    <h3>3. Speicherung der Daten</h3>
-    <p>Deine Daten werden in Google Firebase gespeichert und mit deinem Google-Konto synchronisiert. Hintergrundbild-Dateien werden als Base64 in Firebase gespeichert.</p>
-    
-    <h3>4. Externe APIs</h3>
-    <p>Wir nutzen die YouTube Data API v3 zur Abfrage von Kanal- und Video-Informationen. Dies geschieht nur auf deinen Wunsch hin (via Klick auf den Aktualisierungs-Button).</p>
-    
-    <h3>5. Deine Rechte</h3>
-    <p>Du kannst jederzeit alle deine Daten einsehen, ändern oder löschen, indem du dein Google-Konto verwaltest oder diese App verlässt.</p>
+    <div class="text-content">
+      <h3>1. Allgemeines</h3>
+      <p>Diese Datenschutzerklärung erläutert, wie YouTube Whitelist deine persönlichen Daten erhebt, nutzt und schützt.</p>
+      
+      <h3>2. Daten die wir erheben</h3>
+      <ul>
+        <li><strong>Google-Kontodaten:</strong> Name, E-Mail, Profilfoto (über Firebase Authentication)</li>
+        <li><strong>Video-Fortschritt:</strong> Welche Videos du schaust, wie weit du fortgeschritten bist</li>
+        <li><strong>Einstellungen:</strong> Deine Farbpräferenzen, Hintergrundbilder, Text-Modus-Einstellungen</li>
+        <li><strong>Favoriten:</strong> Deine ausgewählten Kanäle und deren Einstellungen</li>
+      </ul>
+      
+      <h3>3. Speicherung der Daten</h3>
+      <p>Deine Daten werden in Google Firebase gespeichert und mit deinem Google-Konto synchronisiert. Hintergrundbild-Dateien werden als Base64 in Firebase gespeichert.</p>
+      
+      <h3>4. Externe APIs</h3>
+      <p>Wir nutzen die YouTube Data API v3 zur Abfrage von Kanal- und Video-Informationen. Dies geschieht nur auf deinen Wunsch hin (via Klick auf den Aktualisierungs-Button).</p>
+      
+      <h3>5. Deine Rechte</h3>
+      <p>Du kannst jederzeit alle deine Daten einsehen, ändern oder löschen, indem du dein Google-Konto verwaltest oder diese App verlässt.</p>
+    </div>
   </section>
   <section id="termsView" class="section text-page hidden">
     <h2>Nutzungsbedingungen</h2>
-    <h3>1. Akzeptanz der Bedingungen</h3>
-    <p>Mit der Nutzung dieser App akzeptierst du diese Nutzungsbedingungen.</p>
-    
-    <h3>2. YouTube API Nutzung</h3>
-    <p>Diese App nutzt die YouTube Data API gemäß den <a href="https://www.youtube.com/static?template=terms" target="_blank">YouTube-Bedingungen</a>. Du stimmst zu, die API nur entsprechend dieser Bedingungen zu nutzen.</p>
-    
-    <h3>3. Keine Gewährleistung</h3>
-    <p>Diese App wird "wie vorhanden" bereitgestellt. Wir garantieren nicht, dass sie fehlerfrei oder kontinuierlich verfügbar ist.</p>
-    
-    <h3>4. Haftungsbeschränkung</h3>
-    <p>Wir haften nicht für Datenverlust, Systemausfälle oder andere Schäden, die sich aus der Nutzung dieser App ergeben.</p>
-    
-    <h3>5. Änderungen</h3>
-    <p>Diese Bedingungen können jederzeit geändert werden. Du wirst über wichtige Änderungen informiert.</p>
+    <div class="text-content">
+      <h3>1. Akzeptanz der Bedingungen</h3>
+      <p>Mit der Nutzung dieser App akzeptierst du diese Nutzungsbedingungen.</p>
+      
+      <h3>2. YouTube API Nutzung</h3>
+      <p>Diese App nutzt die YouTube Data API gemäß den <a href="https://www.youtube.com/static?template=terms" target="_blank">YouTube-Bedingungen</a>. Du stimmst zu, die API nur entsprechend dieser Bedingungen zu nutzen.</p>
+      
+      <h3>3. Keine Gewährleistung</h3>
+      <p>Diese App wird "wie vorhanden" bereitgestellt. Wir garantieren nicht, dass sie fehlerfrei oder kontinuierlich verfügbar ist.</p>
+      
+      <h3>4. Haftungsbeschränkung</h3>
+      <p>Wir haften nicht für Datenverlust, Systemausfälle oder andere Schäden, die sich aus der Nutzung dieser App ergeben.</p>
+      
+      <h3>5. Änderungen</h3>
+      <p>Diese Bedingungen können jederzeit geändert werden. Du wirst über wichtige Änderungen informiert.</p>
+    </div>
   </section>
   <section id="settingsView" class="section hidden">
     <h2>Einstellungen</h2>
@@ -633,13 +723,17 @@
     </div>
   </section>
   <section id="continueView" class="section text-page hidden">
-    <h2>Angefangene Videos</h2>
-    <p class="setting-hint" style="margin-bottom: 1.5rem;">Hier findest du alle Videos, die du angefangen hast zu schauen.</p>
+    <div class="text-content">
+      <h2 style="margin-top: 0;">Angefangene Videos</h2>
+      <p class="setting-hint">Hier findest du alle Videos, die du angefangen hast zu schauen.</p>
+    </div>
     <div class="grid cols-vids" id="continueViewGrid"></div>
   </section>
   <section id="mylistView" class="section text-page hidden">
-    <h2>Meine Liste</h2>
-    <p class="setting-hint" style="margin-bottom: 1.5rem;">Deine persönliche Liste mit gespeicherten Videos.</p>
+    <div class="text-content">
+      <h2 style="margin-top: 0;">Meine Liste</h2>
+      <p class="setting-hint">Deine persönliche Liste mit gespeicherten Videos.</p>
+    </div>
     <div class="grid cols-vids" id="mylistViewGrid"></div>
   </section>
 </main>
@@ -760,7 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput: document.getElementById('searchInput'), searchBtn: document.getElementById('searchBtn'),
         sortOptions: document.getElementById('sortOptions'),
         channelBannerContainer: document.getElementById('channelBannerContainer'), channelBannerBackground: document.getElementById('channelBannerBackground'),
-        channelBanner: document.getElementById('channelBanner'), channelMeta: document.getElementById('channelMeta'),
+        channelName: document.getElementById('channelName'),
         overlay: document.getElementById('playerOverlay'), 
         playerClose: document.getElementById('playerClose'),
         playerMount: document.getElementById('player-mount'), 
@@ -1407,11 +1501,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.current.tab = r.tab || 'videos';
                 els.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === state.current.tab));
                 const info = await getChannelInfo(r.id);
-                els.channelMeta.textContent = info.title;
+                els.channelName.textContent = info.title;
                 els.channelBannerContainer.classList.toggle('hidden', !info.banner);
                 if (info.banner) {
                     els.channelBannerBackground.style.backgroundImage = `url(${info.banner})`;
-                    els.channelBanner.style.backgroundImage = `url(${info.banner})`;
                 }
                 await showChannelContent(state.current.tab, { reset: true });
             } else { 
@@ -1534,6 +1627,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (doc.exists && doc.data().imageUrl) {
                     state.bgImage = doc.data().imageUrl;
                     applyBgImage();
+                    console.log('Hintergrundbild erfolgreich geladen!');
+                } else {
+                    console.log('Kein gespeichertes Hintergrundbild gefunden');
                 }
             } catch (err) {
                 console.error('Fehler beim Laden des Hintergrundbilds:', err);
@@ -1548,9 +1644,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     imageUrl: state.bgImage || null,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                console.log('Hintergrundbild erfolgreich gespeichert!');
+                showStatus('Hintergrundbild gespeichert!');
             } catch (err) {
                 console.error('Fehler beim Speichern des Hintergrundbilds:', err);
+                showStatus('Fehler beim Speichern des Hintergrundbilds', true);
             }
+        } else {
+            console.warn('Kein User angemeldet - Hintergrundbild nicht gespeichert');
+            showStatus('Bitte melde dich an, um das Hintergrundbild zu speichern', true);
         }
     };
     
