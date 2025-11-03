@@ -124,6 +124,13 @@
     body.text-light .searchbar input:focus {
         background: rgba(255,255,255,0.8);
     }
+    body.text-light .page-header {
+        background: rgba(255,255,255,0.5);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    body.text-light .page-header h2 {
+        color: #1a1a1a;
+    }
     body.text-light .video-card, body.text-light .chan-card { 
         background:rgba(255,255,255,0.5); border-color:rgba(0,0,0,0.1); 
         backdrop-filter: blur(12px);
@@ -336,6 +343,29 @@
         flex-shrink: 0;
     }
     .searchbar .btn svg { margin: 0; }
+    #clearSearchBtn {
+        padding: 10px 12px;
+        background: rgba(255,0,51,0.2);
+        border-color: var(--accent);
+    }
+    #clearSearchBtn:hover {
+        background: var(--accent);
+    }
+    
+    /* Mobile: Kleinere Buttons in Suchzeile */
+    @media (max-width: 480px) {
+        .searchbar .btn {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+        #clearSearchBtn {
+            padding: 8px 10px;
+        }
+        .sort-options .btn {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+    }
     .sort-options{
         display: flex;
         gap: 6px;
@@ -527,6 +557,19 @@
     .text-content h2:first-child {
         margin-top: 0;
     }
+    .page-header {
+        background: rgba(15,15,15,0.5);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 14px 20px;
+        margin: 0 0 16px 0;
+    }
+    .page-header h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
     
     /* Loading Skeleton Styles */
     .skeleton { background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%); background-size: 200% 100%; animation: loading 1.5s ease-in-out infinite; border-radius: 8px; }
@@ -610,6 +653,11 @@
     </div>
     <div class="searchbar">
       <input id="searchInput" placeholder="Im Kanal suchen…"/>
+      <button class="btn hidden" id="clearSearchBtn" title="Suche zurücksetzen">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+        </svg>
+      </button>
       <button class="btn" id="searchBtn">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
           <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
@@ -723,16 +771,14 @@
     </div>
   </section>
   <section id="continueView" class="section text-page hidden">
-    <div class="text-content">
-      <h2 style="margin-top: 0;">Angefangene Videos</h2>
-      <p class="setting-hint">Hier findest du alle Videos, die du angefangen hast zu schauen.</p>
+    <div class="page-header">
+      <h2>Angefangene Videos</h2>
     </div>
     <div class="grid cols-vids" id="continueViewGrid"></div>
   </section>
   <section id="mylistView" class="section text-page hidden">
-    <div class="text-content">
-      <h2 style="margin-top: 0;">Meine Liste</h2>
-      <p class="setting-hint">Deine persönliche Liste mit gespeicherten Videos.</p>
+    <div class="page-header">
+      <h2>Meine Liste</h2>
     </div>
     <div class="grid cols-vids" id="mylistViewGrid"></div>
   </section>
@@ -852,6 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tabs: document.querySelectorAll('.tab'), videosTab: document.getElementById('videosTab'), playlistsTab: document.getElementById('playlistsTab'),
         moreVideosBtn: document.getElementById('moreVideosBtn'), morePlaylistsBtn: document.getElementById('morePlaylistsBtn'),
         searchInput: document.getElementById('searchInput'), searchBtn: document.getElementById('searchBtn'),
+        clearSearchBtn: document.getElementById('clearSearchBtn'),
         sortOptions: document.getElementById('sortOptions'),
         channelBannerContainer: document.getElementById('channelBannerContainer'), channelBannerBackground: document.getElementById('channelBannerBackground'),
         channelName: document.getElementById('channelName'),
@@ -1560,7 +1607,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const searchInChannel = async () => {
         const q = els.searchInput.value.trim();
-        if (!q) return showChannelContent('videos', { reset: true });
+        if (!q) {
+            clearSearch();
+            return;
+        }
+        
+        // Zeige Kreuz-Button
+        els.clearSearchBtn.classList.remove('hidden');
         
         els.sortOptions.classList.remove('hidden');
         document.querySelectorAll('[data-sort]').forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
@@ -1579,6 +1632,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             hideStatus();
         } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
+    };
+    
+    const clearSearch = () => {
+        els.searchInput.value = '';
+        els.clearSearchBtn.classList.add('hidden');
+        els.sortOptions.classList.add('hidden');
+        showChannelContent('videos', { reset: true });
     };
 
     // ===== THEME SYSTEM =====
@@ -1660,6 +1720,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (!file) return;
         
+        if (!state.userId) {
+            showStatus('Bitte melde dich an, um das Hintergrundbild zu speichern', true);
+            return;
+        }
+        
         // Maximale Dateigröße: 5MB (vernünftiger Wert für Geschwindigkeit)
         if (file.size > 5 * 1024 * 1024) {
             alert('Das Bild ist zu groß. Maximal 5MB erlaubt.');
@@ -1667,10 +1732,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             state.bgImage = event.target.result;
             applyBgImage();
-            saveBgImage();
+            await saveBgImage();
         };
         reader.readAsDataURL(file);
     };
@@ -1742,6 +1807,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.moreVideosBtn.onclick = () => showChannelContent('videos', { reset: false });
         els.morePlaylistsBtn.onclick = () => showChannelContent('playlists', { reset: false });
         els.searchBtn.onclick = searchInChannel;
+        els.clearSearchBtn.onclick = clearSearch;
         els.searchInput.onkeydown = e => { if (e.key === 'Enter') searchInChannel(); };
         document.querySelectorAll('[data-sort]').forEach(btn => btn.onclick = () => {
             state.current.searchOrder = btn.dataset.sort;
@@ -1842,3 +1908,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
