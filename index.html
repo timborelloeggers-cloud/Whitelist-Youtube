@@ -1164,7 +1164,7 @@
             <input 
               type="text" 
               id="addChannelInput" 
-              placeholder="@Kanalname" 
+              placeholder="@Kanalname oder youtube.com/@..." 
               style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text); font-size: 0.9rem;"
             />
             <button class="btn" id="addChannelBtn">
@@ -1644,9 +1644,36 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Stelle sicher, dass es mit @ beginnt
-        const handle = input.startsWith('@') ? input : '@' + input;
-        console.log('🔍 DEBUG: Finaler Handle:', handle);
+        // Parse URL falls vorhanden
+        let identifier = input;
+        
+        // Prüfe ob es eine YouTube URL ist
+        if (input.includes('youtube.com/') || input.includes('youtu.be/')) {
+            try {
+                const url = new URL(input.startsWith('http') ? input : 'https://' + input);
+                
+                // Extrahiere @handle aus URL wie youtube.com/@DoktorWhatson
+                if (url.pathname.startsWith('/@')) {
+                    identifier = url.pathname.split('/')[1]; // z.B. /@DoktorWhatson
+                    console.log('🔗 Handle aus URL extrahiert:', identifier);
+                }
+                // Extrahiere Channel-ID aus URL wie youtube.com/channel/UCxxxxx
+                else if (url.pathname.startsWith('/channel/')) {
+                    identifier = url.pathname.split('/')[2]; // Channel-ID
+                    console.log('🔗 Channel-ID aus URL extrahiert:', identifier);
+                }
+            } catch (e) {
+                console.warn('URL-Parsing fehlgeschlagen:', e);
+            }
+        }
+        
+        // Stelle sicher, dass Handle mit @ beginnt (falls es keins ist)
+        if (!identifier.startsWith('UC') && !identifier.startsWith('@')) {
+            identifier = '@' + identifier;
+        }
+        
+        const handle = identifier;
+        console.log('🔍 DEBUG: Finaler Identifier:', handle);
         
         // LÖSCHE CACHE für diesen Handle (zum Debuggen)
         state.channels.delete(handle);
