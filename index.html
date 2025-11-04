@@ -1648,6 +1648,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const handle = input.startsWith('@') ? input : '@' + input;
         console.log('🔍 DEBUG: Finaler Handle:', handle);
         
+        // LÖSCHE CACHE für diesen Handle (zum Debuggen)
+        state.channels.delete(handle);
+        state.channels.delete(handle.toLowerCase());
+        console.log('🧹 Cache gelöscht für:', handle);
+        
         const config = loadChannelConfig();
         
         // Prüfe auf Duplikat
