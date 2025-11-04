@@ -1691,8 +1691,45 @@ document.addEventListener('DOMContentLoaded', () => {
         // Zeige Loading
         showStatus('Suche Kanal...', 'loading');
         
-        // Prüfe ob Kanal existiert
-        const info = await getChannelInfo(handle);
+        // Wenn URL eingegeben wurde, versuche Channel-ID direkt zu extrahieren
+        let channelId = null;
+        if (input.includes('youtube.com/')) {
+            try {
+                console.log('🌐 Versuche Channel-ID von YouTube-Seite zu extrahieren...');
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(input);
+                const response = await fetch(proxyUrl);
+                const html = await response.text();
+                
+                // Suche nach Channel-ID in verschiedenen Formaten
+                const patterns = [
+                    /"channelId":"(UC[^"]+)"/,
+                    /"externalId":"(UC[^"]+)"/,
+                    /youtube\.com\/channel\/(UC[^"\/\?]+)/,
+                    /"browse_id":"(UC[^"]+)"/
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = html.match(pattern);
+                    if (match && match[1]) {
+                        channelId = match[1];
+                        console.log('✅ Channel-ID gefunden:', channelId);
+                        break;
+                    }
+                }
+            } catch (e) {
+                console.warn('Channel-ID Extraktion fehlgeschlagen:', e);
+            }
+        }
+        
+        // Wenn wir eine Channel-ID haben, nutze diese direkt
+        let info;
+        if (channelId) {
+            console.log('🎯 Verwende extrahierte Channel-ID:', channelId);
+            info = await getChannelInfo(channelId);
+        } else {
+            // Fallback: Normale Suche
+            info = await getChannelInfo(handle);
+        }
         
         if (!info) {
             showNotification('Kanal nicht gefunden. Überprüfe den Namen.', 'error');
@@ -3065,3 +3102,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
