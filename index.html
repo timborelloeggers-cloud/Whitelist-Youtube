@@ -1637,6 +1637,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const addNewChannel = async () => {
         const input = els.addChannelInput.value.trim();
+        console.log('🔍 DEBUG: Input-Wert:', input);
         
         if (!input) {
             showNotification('Bitte gib einen Kanalnamen ein', 'info');
@@ -1645,6 +1646,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Stelle sicher, dass es mit @ beginnt
         const handle = input.startsWith('@') ? input : '@' + input;
+        console.log('🔍 DEBUG: Finaler Handle:', handle);
         
         const config = loadChannelConfig();
         
