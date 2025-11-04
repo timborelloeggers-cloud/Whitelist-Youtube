@@ -148,7 +148,9 @@
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text); transition: background-color 0.3s ease, color 0.3s ease;}
     .hidden { display: none !important; }
     header{position:sticky;top:0;z-index:100;backdrop-filter:saturate(140%) blur(12px);background:rgba(10,10,10,.5);border-bottom:1px solid rgba(255,255,255,.06); transition: background 0.3s ease;}
-    .topbar{max-width:1200px;margin:0 auto;padding:.6rem .75rem;display:flex;gap:.5rem;align-items:center}
+    .topbar{max-width:1200px;margin:0 auto;padding:.6rem .75rem;display:flex;gap:.5rem;align-items:center;justify-content:space-between;}
+    .topbar-left{display:flex;gap:.5rem;align-items:center;}
+    .topbar-right{display:flex;gap:.5rem;align-items:center;}
     .btn{border:none;background:rgba(37,37,37,0.7);color:#eee;border:1px solid rgba(47,47,47,0.6);padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem;white-space:nowrap; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; backdrop-filter: blur(8px);}
     .btn:hover{transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3);}
     .btn:active{transform: translateY(0);}
@@ -474,6 +476,77 @@
     }
     .menu-link:hover { background: rgba(255,255,255,0.1); transform: translateX(-3px); }
     
+    /* API Quota Counter */
+    .quota-container {
+      margin-top: 30px;
+      padding: 16px;
+      background: rgba(15,15,15,0.5);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+    }
+    .quota-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .quota-label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .quota-value {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-family: monospace;
+    }
+    .quota-bar {
+      height: 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 8px;
+    }
+    .quota-progress {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #10b981);
+      border-radius: 8px;
+      width: 0%;
+      transition: width 0.5s ease, background 0.3s ease;
+    }
+    .quota-progress.warning {
+      background: linear-gradient(90deg, #f59e0b, #f59e0b);
+    }
+    .quota-progress.danger {
+      background: linear-gradient(90deg, #ef4444, #ef4444);
+    }
+    .quota-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    #quotaPercent {
+      font-weight: 600;
+      font-family: monospace;
+    }
+    .quota-reset {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+    
+    /* Light Mode */
+    body.text-light .quota-container {
+      background: rgba(255,255,255,0.5);
+      border-color: rgba(0,0,0,0.1);
+    }
+    body.text-light .quota-bar {
+      background: rgba(0,0,0,0.1);
+    }
+    
     /* Settings Page */
     .settings-section { margin-top: 20px; }
     .settings-section h3 { font-size: 1.1rem; margin: 20px 4px 15px; border-bottom: 1px solid #2a2a2a; padding-bottom: 8px; }
@@ -505,6 +578,117 @@
     }
     .color-option:hover { transform: scale(1.1); }
     .color-option.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,0,51,0.2); }
+    
+    /* Channel Management */
+    .channel-management-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .channel-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+    .channel-item:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .channel-item-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.05);
+    }
+    .channel-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .channel-item-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .channel-item-handle {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .channel-item-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .favorite-checkbox {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      position: relative;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .favorite-checkbox:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: #fbbf24;
+    }
+    .favorite-checkbox.active {
+      background: #fbbf24;
+      border-color: #fbbf24;
+    }
+    .favorite-checkbox.active::after {
+      content: '⭐';
+      font-size: 14px;
+    }
+    .remove-channel-btn {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      background: rgba(239,68,68,0.2);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #ef4444;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .remove-channel-btn:hover {
+      background: rgba(239,68,68,0.4);
+      border-color: #ef4444;
+      transform: translateY(-2px);
+    }
+    
+    /* Light Mode */
+    body.text-light .channel-item {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+    body.text-light .channel-item:hover {
+      background: rgba(0,0,0,0.06);
+      border-color: rgba(0,0,0,0.15);
+    }
+    body.text-light .favorite-checkbox {
+      background: rgba(0,0,0,0.05);
+      border-color: rgba(0,0,0,0.2);
+    }
+    body.text-light #addChannelInput {
+      background: rgba(0,0,0,0.05) !important;
+      border-color: rgba(0,0,0,0.1) !important;
+    }
     
     .bg-upload-container { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .bg-preview { 
@@ -583,18 +767,141 @@
     .skeleton-video .skeleton-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
     .skeleton-video .skeleton-title { width: 100%; height: 16px; }
     .skeleton-video .skeleton-meta { width: 60%; height: 12px; }
+    
+    /* Notification System with Glassmorphism */
+    #statusBox {
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 500px;
+        width: 90%;
+        padding: 16px 24px;
+        background: rgba(15,15,15,0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        color: var(--text);
+        font-size: 0.95rem;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideDown 0.3s ease;
+        transition: all 0.3s ease;
+    }
+    
+    #statusBox::before {
+        content: '';
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    
+    /* Loading State */
+    #statusBox.loading::before {
+        content: '⏳';
+        font-size: 20px;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    /* Success State */
+    #statusBox.success {
+        background: rgba(16,185,129,0.2);
+        border-color: rgba(16,185,129,0.4);
+    }
+    #statusBox.success::before {
+        content: '✓';
+        font-size: 20px;
+        color: #10b981;
+        font-weight: bold;
+    }
+    
+    /* Error State */
+    #statusBox.error {
+        background: rgba(239,68,68,0.2);
+        border-color: rgba(239,68,68,0.4);
+    }
+    #statusBox.error::before {
+        content: '✕';
+        font-size: 20px;
+        color: #ef4444;
+        font-weight: bold;
+    }
+    
+    /* Info State */
+    #statusBox.info {
+        background: rgba(59,130,246,0.2);
+        border-color: rgba(59,130,246,0.4);
+    }
+    #statusBox.info::before {
+        content: 'ℹ';
+        font-size: 20px;
+        color: #3b82f6;
+        font-weight: bold;
+    }
+    
+    /* Light Mode */
+    body.text-light #statusBox {
+        background: rgba(255,255,255,0.85);
+        border-color: rgba(0,0,0,0.15);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+    body.text-light #statusBox.success {
+        background: rgba(16,185,129,0.15);
+        border-color: rgba(16,185,129,0.3);
+    }
+    body.text-light #statusBox.error {
+        background: rgba(239,68,68,0.15);
+        border-color: rgba(239,68,68,0.3);
+    }
+    body.text-light #statusBox.info {
+        background: rgba(59,130,246,0.15);
+        border-color: rgba(59,130,246,0.3);
+    }
+    
+    /* Hidden State */
+    #statusBox.hidden {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+        pointer-events: none;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.7; }
+    }
   </style>
 </head>
 <body>
 
 <header>
   <div class="topbar">
-    <button class="btn" id="backBtn">←</button>
-    <button class="btn" id="homeBtn">Home</button>
-    <button class="btn" id="refreshBtn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
-    <button class="btn" id="forwardBtn">→</button>
-    <button class="btn" id="themeToggleBtn" title="Theme wechseln"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg></button>
-    <button class="btn menu-btn" id="menuBtn">☰</button>
+    <div class="topbar-left">
+      <button class="btn" id="backBtn">←</button>
+      <button class="btn" id="homeBtn">Home</button>
+      <button class="btn" id="refreshBtn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg></button>
+      <button class="btn" id="forwardBtn">→</button>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" id="themeToggleBtn" title="Theme wechseln"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg></button>
+      <button class="btn menu-btn" id="menuBtn">☰</button>
+    </div>
   </div>
 </header>
 
@@ -626,6 +933,20 @@
       </svg>
       Einstellungen
     </a>
+  </div>
+  
+  <div class="quota-container">
+    <div class="quota-header">
+      <span class="quota-label">API Kontingent</span>
+      <span class="quota-value" id="quotaValue">0 / 10.000</span>
+    </div>
+    <div class="quota-bar">
+      <div class="quota-progress" id="quotaProgress"></div>
+    </div>
+    <div class="quota-info">
+      <span id="quotaPercent">0%</span>
+      <span class="quota-reset">Reset: 09:00 Uhr</span>
+    </div>
   </div>
 </div>
 <div class="menu-overlay hidden" id="menuOverlay"></div>
@@ -768,6 +1089,32 @@
           Button in der oberen Navigationsleiste wechseln.
         </p>
       </div>
+      
+      <div class="setting-group">
+        <label class="setting-label">Kanal-Verwaltung</label>
+        
+        <div class="channel-add-section">
+          <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 12px;">Neuen Kanal hinzufügen:</p>
+          <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <input 
+              type="text" 
+              id="addChannelInput" 
+              placeholder="@Kanalname" 
+              style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text); font-size: 0.9rem;"
+            />
+            <button class="btn" id="addChannelBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+              </svg>
+              Hinzufügen
+            </button>
+          </div>
+        </div>
+        
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 12px;">Deine Kanäle (⭐ = Favorit):</p>
+        <div id="channelManagementList" class="channel-management-list"></div>
+        <p class="setting-hint">Favoriten erscheinen ganz oben auf der Startseite. Du kannst Kanäle auch komplett entfernen.</p>
+      </div>
     </div>
   </section>
   <section id="continueView" class="section text-page hidden">
@@ -884,7 +1231,13 @@ document.addEventListener('DOMContentLoaded', () => {
         bgImage: null, // Base64 oder URL des Hintergrundbildes
         settings: {
             minDuration: 120 // in seconds (0 = Alle)
-        }
+        },
+        quota: {
+            used: 0,
+            limit: 10000,
+            resetTime: null
+        },
+        channelsConfig: [] // Dynamische Kanal-Liste
     };
     const els = {
         statusBox: document.getElementById('statusBox'), 
@@ -938,11 +1291,17 @@ document.addEventListener('DOMContentLoaded', () => {
         themeToggleBtn: document.getElementById('themeToggleBtn'),
         durationValue: document.getElementById('durationValue'),
         durationMinusBtn: document.getElementById('durationMinusBtn'),
+        quotaValue: document.getElementById('quotaValue'),
+        quotaProgress: document.getElementById('quotaProgress'),
+        quotaPercent: document.getElementById('quotaPercent'),
         durationPlusBtn: document.getElementById('durationPlusBtn'),
         bgImageInput: document.getElementById('bgImageInput'),
         bgImageBtn: document.getElementById('bgImageBtn'),
         bgImageRemoveBtn: document.getElementById('bgImageRemoveBtn'),
         bgPreview: document.getElementById('bgPreview'),
+        addChannelInput: document.getElementById('addChannelInput'),
+        addChannelBtn: document.getElementById('addChannelBtn'),
+        channelManagementList: document.getElementById('channelManagementList'),
     };
     
     // ===== FIREBASE SETUP =====
@@ -951,6 +1310,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const auth = firebase.auth();
     const homeCacheRef = db.collection('cache').doc('homeData');
     const videoDetailsCacheRef = db.collection('cache').doc('videoDetails');
+    const channelInfoCacheRef = db.collection('cache').doc('channelInfo');
 
     // ===== SETTINGS =====
     const saveSettings = () => {
@@ -986,9 +1346,266 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ===== API QUOTA MANAGEMENT =====
+    const QUOTA_COSTS = {
+        search: 100,
+        videos: 1,
+        channels: 1,
+        playlistItems: 1,
+        playlists: 1
+    };
+    
+    const loadQuotaState = () => {
+        try {
+            const saved = localStorage.getItem('apiQuota');
+            if (saved) {
+                const data = JSON.parse(saved);
+                state.quota = data;
+                
+                // Prüfe ob Reset-Zeit überschritten
+                if (data.resetTime && new Date() >= new Date(data.resetTime)) {
+                    resetQuota();
+                }
+            } else {
+                resetQuota();
+            }
+        } catch (e) {
+            console.error('Quota laden fehlgeschlagen:', e);
+            resetQuota();
+        }
+        updateQuotaUI();
+    };
+    
+    const saveQuotaState = () => {
+        try {
+            localStorage.setItem('apiQuota', JSON.stringify(state.quota));
+        } catch (e) {
+            console.error('Quota speichern fehlgeschlagen:', e);
+        }
+    };
+    
+    const resetQuota = () => {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0); // 09:00 Uhr deutscher Zeit
+        
+        state.quota = {
+            used: 0,
+            limit: 10000,
+            resetTime: tomorrow.toISOString()
+        };
+        saveQuotaState();
+        updateQuotaUI();
+        console.log('📊 API Quota zurückgesetzt. Nächster Reset:', tomorrow.toLocaleString('de-DE'));
+    };
+    
+    const addQuotaCost = (endpoint, count = 1) => {
+        const cost = (QUOTA_COSTS[endpoint] || 1) * count;
+        state.quota.used += cost;
+        saveQuotaState();
+        updateQuotaUI();
+        console.log(`📊 API Quota: +${cost} (${endpoint}) → ${state.quota.used} / ${state.quota.limit}`);
+    };
+    
+    const updateQuotaUI = () => {
+        const { used, limit } = state.quota;
+        const percent = Math.min(100, Math.round((used / limit) * 100));
+        
+        els.quotaValue.textContent = `${used.toLocaleString()} / ${limit.toLocaleString()}`;
+        els.quotaPercent.textContent = `${percent}%`;
+        els.quotaProgress.style.width = `${percent}%`;
+        
+        // Farbe basierend auf Prozent
+        els.quotaProgress.classList.remove('warning', 'danger');
+        if (percent >= 90) {
+            els.quotaProgress.classList.add('danger');
+        } else if (percent >= 75) {
+            els.quotaProgress.classList.add('warning');
+        }
+    };
+    
+    // Check Quota Reset jeden Minute
+    setInterval(() => {
+        if (state.quota.resetTime && new Date() >= new Date(state.quota.resetTime)) {
+            resetQuota();
+            showNotification('API Kontingent wurde zurückgesetzt 🔄', 'success');
+        }
+    }, 60000); // Jede Minute
+
+    // ===== CHANNEL MANAGEMENT =====
+    const loadChannelConfig = () => {
+        try {
+            const saved = localStorage.getItem('channelConfig');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (e) {
+            console.error('Fehler beim Laden der Kanal-Konfiguration:', e);
+        }
+        // Fallback auf CHANNELS_CONFIG
+        return CHANNELS_CONFIG.slice();
+    };
+    
+    const saveChannelConfig = (config) => {
+        try {
+            localStorage.setItem('channelConfig', JSON.stringify(config));
+            state.channelsConfig = config;
+        } catch (e) {
+            console.error('Fehler beim Speichern der Kanal-Konfiguration:', e);
+        }
+    };
+    
+    const renderChannelList = async () => {
+        if (!els.channelManagementList) return;
+        
+        els.channelManagementList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--muted);">Lädt Kanäle...</div>';
+        
+        const config = loadChannelConfig();
+        if (config.length === 0) {
+            els.channelManagementList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--muted);">Keine Kanäle vorhanden</div>';
+            return;
+        }
+        
+        els.channelManagementList.innerHTML = '';
+        
+        for (const channelConfig of config) {
+            const info = await getChannelInfo(channelConfig.handle);
+            if (!info) continue;
+            
+            const item = document.createElement('div');
+            item.className = 'channel-item';
+            item.dataset.handle = channelConfig.handle;
+            item.dataset.channelId = info.id;
+            
+            item.innerHTML = `
+                <img class="channel-item-thumb" src="${info.thumb}" alt="">
+                <div class="channel-item-info">
+                    <div class="channel-item-name">${info.title}</div>
+                    <div class="channel-item-handle">${channelConfig.handle}</div>
+                </div>
+                <div class="channel-item-actions">
+                    <button class="favorite-checkbox ${channelConfig.isFavorite ? 'active' : ''}" data-handle="${channelConfig.handle}" title="Als Favorit markieren">
+                        ${channelConfig.isFavorite ? '⭐' : '☆'}
+                    </button>
+                    <button class="remove-channel-btn" data-handle="${channelConfig.handle}" title="Kanal entfernen">
+                        🗑️
+                    </button>
+                </div>
+            `;
+            
+            els.channelManagementList.appendChild(item);
+        }
+        
+        // Event-Listener für Favorite-Toggle
+        els.channelManagementList.querySelectorAll('.favorite-checkbox').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFavorite(btn.dataset.handle);
+            });
+        });
+        
+        // Event-Listener für Remove
+        els.channelManagementList.querySelectorAll('.remove-channel-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeChannel(btn.dataset.handle);
+            });
+        });
+    };
+    
+    const toggleFavorite = (handle) => {
+        const config = loadChannelConfig();
+        const channel = config.find(c => c.handle === handle);
+        
+        if (channel) {
+            channel.isFavorite = !channel.isFavorite;
+            saveChannelConfig(config);
+            renderChannelList();
+            showNotification(channel.isFavorite ? 'Als Favorit markiert ⭐' : 'Favorit entfernt ☆', 'success');
+        }
+    };
+    
+    const removeChannel = async (handle) => {
+        const config = loadChannelConfig();
+        
+        if (config.length <= 1) {
+            showNotification('Mindestens ein Kanal muss vorhanden bleiben', 'error');
+            return;
+        }
+        
+        const index = config.findIndex(c => c.handle === handle);
+        if (index === -1) return;
+        
+        const channelName = config[index].handle;
+        config.splice(index, 1);
+        saveChannelConfig(config);
+        
+        await renderChannelList();
+        showNotification(`Kanal ${channelName} entfernt 🗑️`, 'success');
+    };
+    
+    const addNewChannel = async () => {
+        const input = els.addChannelInput.value.trim();
+        
+        if (!input) {
+            showNotification('Bitte gib einen Kanalnamen ein', 'info');
+            return;
+        }
+        
+        // Stelle sicher, dass es mit @ beginnt
+        const handle = input.startsWith('@') ? input : '@' + input;
+        
+        const config = loadChannelConfig();
+        
+        // Prüfe auf Duplikat
+        if (config.find(c => c.handle.toLowerCase() === handle.toLowerCase())) {
+            showNotification('Dieser Kanal ist bereits vorhanden', 'error');
+            return;
+        }
+        
+        // Zeige Loading
+        showStatus('Suche Kanal...', 'loading');
+        
+        // Prüfe ob Kanal existiert
+        const info = await getChannelInfo(handle);
+        
+        if (!info) {
+            showNotification('Kanal nicht gefunden. Überprüfe den Namen.', 'error');
+            return;
+        }
+        
+        // Füge hinzu
+        config.push({ handle: handle, isFavorite: false });
+        saveChannelConfig(config);
+        
+        // Leere Input
+        els.addChannelInput.value = '';
+        
+        // Rendere neu
+        await renderChannelList();
+        hideStatus();
+        showNotification(`Kanal ${info.title} hinzugefügt ✓`, 'success');
+    };
+
     // ===== UTILS & HELPERS =====
-    const showStatus = (message, isError = false) => { els.statusBox.textContent = message; els.statusBox.className = isError ? 'error' : 'loading'; };
+    const showStatus = (message, type = 'loading') => {
+        els.statusBox.textContent = message;
+        els.statusBox.className = type; // 'loading', 'success', 'error', 'info'
+        
+        // Auto-hide nach 5 Sekunden bei success/info, 8 Sekunden bei error
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => hideStatus(), 5000);
+        } else if (type === 'error') {
+            setTimeout(() => hideStatus(), 8000);
+        }
+    };
     const hideStatus = () => { els.statusBox.className = 'hidden'; };
+    
+    // Elegante Alert-Alternative mit Glassmorphism
+    const showNotification = (message, type = 'info') => {
+        showStatus(message, type);
+    };
     const fmtDate = s => new Date(s).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
     const formatDuration = (seconds) => {
         if (!seconds) return '';
@@ -1115,18 +1732,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const markAsWatched = (videoId, duration) => {
         if (!state.userId || !videoId) {
-            alert('Bitte melde dich an, um Videos als angeschaut zu markieren.');
+            showNotification('Bitte melde dich an, um Videos als angeschaut zu markieren.', 'info');
             return;
         }
         // Setze Fortschritt auf 100%
         saveProgress(videoId, duration, duration);
         // Update UI sofort
         updateAllProgressBars();
+        showNotification('Video als angeschaut markiert ✓', 'success');
     };
 
     const toggleMyList = async (video) => {
         if (!state.userId) {
-            alert('Bitte melde dich an, um Videos zu deiner Liste hinzuzufügen.');
+            showNotification('Bitte melde dich an, um Videos zu deiner Liste hinzuzufügen.', 'info');
             return;
         }
         const videoId = video.videoId;
@@ -1134,6 +1752,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove from list
             state.myList.delete(videoId);
             await firebase.firestore().collection('users').doc(state.userId).collection('myList').doc(videoId).delete();
+            showNotification('Video von deiner Liste entfernt', 'info');
         } else {
             // Add to list
             state.myList.set(videoId, video);
@@ -1141,6 +1760,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 videoId, title: video.title, thumb: video.thumb, channelTitle: video.channelTitle,
                 durationSeconds: video.durationSeconds, date: video.date, addedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            showNotification('Video zu deiner Liste hinzugefügt ✓', 'success');
         }
         // Update UI
         document.querySelectorAll(`[data-video-id="${videoId}"] .add-to-list-btn`).forEach(btn => {
@@ -1207,6 +1827,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Fetch video details from YouTube API
                 const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+                addQuotaCost('videos', videoIds.length); // +1 pro Video
                 const data = await res.json();
                 const videos = data.items.map(item => ({
                     videoId: item.id,
@@ -1261,6 +1882,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Fetch video details from YouTube API
             const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+            addQuotaCost('videos', videoIds.length); // +1 pro Video
             const data = await res.json();
             const videos = data.items.map(item => ({
                 videoId: item.id,
@@ -1301,6 +1923,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Fetch video details from YouTube API
             const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+            addQuotaCost('videos', videoIds.length); // +1 pro Video
             const data = await res.json();
             const videos = data.items.map(item => ({
                 videoId: item.id,
@@ -1317,27 +1940,77 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const getChannelInfo = async (identifier) => {
-        if (state.channels.has(identifier)) return state.channels.get(identifier);
+        // 1. Prüfe lokalen Cache
+        if (state.channels.has(identifier)) {
+            console.log(`📦 Channel-Info aus lokalem Cache: ${identifier}`);
+            return state.channels.get(identifier);
+        }
         
         let channelId = identifier;
+        let info = null;
+        
+        // 2. Handle zu ID auflösen (falls nötig)
         if (identifier.startsWith('@')) {
             const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${identifier}&type=channel&maxResults=1&key=${YOUTUBE_API_KEY}`);
+            addQuotaCost('search'); // +100 Quota
             if (!res.ok) throw new Error('API Error');
             const searchData = await res.json();
             channelId = searchData.items?.[0]?.snippet?.channelId;
             if (!channelId) throw new Error(`Kanal-Handle '${identifier}' nicht gefunden.`);
+            
+            // Prüfe ob wir die ID schon gecacht haben
+            if (state.channels.has(channelId)) {
+                console.log(`📦 Channel-Info aus lokalem Cache (via ID): ${channelId}`);
+                info = state.channels.get(channelId);
+                state.channels.set(identifier, info); // Cache auch unter Handle
+                return info;
+            }
         }
         
+        // 3. Prüfe Firebase Cache
+        try {
+            const cacheDoc = await channelInfoCacheRef.get();
+            if (cacheDoc.exists) {
+                const cached = cacheDoc.data().channels?.[channelId];
+                if (cached) {
+                    console.log(`🔥 Channel-Info aus Firebase Cache: ${channelId}`);
+                    state.channels.set(identifier, cached);
+                    state.channels.set(channelId, cached);
+                    return cached;
+                }
+            }
+        } catch (e) {
+            console.warn('Firebase Cache-Check fehlgeschlagen:', e);
+        }
+        
+        // 4. API-Call (nur wenn wirklich nicht gecacht)
+        console.log(`🌐 Lade Channel-Info von API: ${channelId}`);
         const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings&id=${channelId}&key=${YOUTUBE_API_KEY}`);
+        addQuotaCost('channels'); // +1 Quota
         if (!res.ok) throw new Error('API Error');
         const data = await res.json();
         const c = data.items?.[0];
         if (!c) throw new Error(`Kanal-Info für ID ${channelId} nicht gefunden.`);
         
         const banner = c.brandingSettings?.image?.bannerTvImageUrl?.replace(/=w\d+/, '=w2560') || null;
-        const info = { id: c.id, title: c.snippet?.title, thumb: c.snippet?.thumbnails?.default?.url, uploadsId: c.contentDetails?.relatedPlaylists?.uploads, banner };
+        info = { id: c.id, title: c.snippet?.title, thumb: c.snippet?.thumbnails?.default?.url, uploadsId: c.contentDetails?.relatedPlaylists?.uploads, banner };
+        
+        // 5. Speichere in lokalem Cache
         state.channels.set(identifier, info);
         state.channels.set(info.id, info);
+        
+        // 6. Speichere in Firebase Cache (async, blockiert nicht)
+        channelInfoCacheRef.get().then(doc => {
+            const existing = doc.exists ? doc.data().channels || {} : {};
+            existing[info.id] = info;
+            if (identifier.startsWith('@')) {
+                existing[identifier] = info; // Speichere auch Handle
+            }
+            return channelInfoCacheRef.set({ channels: existing }, { merge: true });
+        }).then(() => {
+            console.log(`✅ Channel-Info in Firebase gespeichert: ${info.id}`);
+        }).catch(e => console.error('Channel-Cache-Update fehlgeschlagen:', e));
+        
         return info;
     };
     
@@ -1349,12 +2022,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allVideoIds.length === 0) return [];
 
         const durationMap = new Map();
+        const newCacheEntries = {}; // Neue Videos zum Speichern
+        
         for (let i = 0; i < allVideoIds.length; i += 50) {
             const chunk = allVideoIds.slice(i, i + 50);
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${chunk.join(',')}&key=${YOUTUBE_API_KEY}`);
-            if (!res.ok) continue;
-            const data = await res.json();
-            data.items.forEach(v => durationMap.set(v.id, parseISO8601Duration(v.contentDetails.duration)));
+            
+            // Prüfe erst den Cache
+            const uncachedIds = [];
+            chunk.forEach(videoId => {
+                if (state.videoDetailsCache.has(videoId)) {
+                    durationMap.set(videoId, state.videoDetailsCache.get(videoId).durationSeconds);
+                } else {
+                    uncachedIds.push(videoId);
+                }
+            });
+            
+            // Nur API-Call für nicht-gecachte Videos
+            if (uncachedIds.length > 0) {
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${uncachedIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+                addQuotaCost('videos', uncachedIds.length); // +1 pro Video
+                if (res.ok) {
+                    const data = await res.json();
+                    data.items.forEach(v => {
+                        const duration = parseISO8601Duration(v.contentDetails.duration);
+                        durationMap.set(v.id, duration);
+                        
+                        // Speichere in lokalem Cache
+                        const cacheEntry = { durationSeconds: duration };
+                        state.videoDetailsCache.set(v.id, cacheEntry);
+                        newCacheEntries[v.id] = cacheEntry;
+                    });
+                }
+            }
+        }
+        
+        // Speichere neue Einträge in Firebase (async, blockiert nicht)
+        if (Object.keys(newCacheEntries).length > 0) {
+            videoDetailsCacheRef.get().then(doc => {
+                const existing = doc.exists ? doc.data().videos || {} : {};
+                const updated = { ...existing, ...newCacheEntries };
+                return videoDetailsCacheRef.set({ videos: updated }, { merge: true });
+            }).catch(e => console.error('Cache-Update fehlgeschlagen:', e));
         }
         
         return items
@@ -1401,8 +2109,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showSkeletons(els.otherChannelGrid, 7, 'channel');
         showSkeletons(els.latestVideosGrid, 8, 'video');
         
+        const channelsConfig = loadChannelConfig();
         const successfulChannels = [];
-        for (const config of CHANNELS_CONFIG) {
+        for (const config of channelsConfig) {
             try {
                 const info = await getChannelInfo(config.handle);
                 successfulChannels.push({ ...info, isFavorite: config.isFavorite });
@@ -1414,6 +2123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const info of successfulChannels) {
             try {
                 const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${info.uploadsId}&maxResults=5&key=${YOUTUBE_API_KEY}`);
+                addQuotaCost('playlistItems'); // +1 Quota
                 if (res.ok) {
                     const data = await res.json();
                     if(data.items?.length > 0) {
@@ -1438,7 +2148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const cacheData = { channels: successfulChannels, videos: allVideos, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
         await homeCacheRef.set(cacheData);
-        hideStatus();
+        showStatus('Daten erfolgreich aktualisiert ✓', 'success');
         els.refreshBtn.classList.remove('loading');
     };
 
@@ -1500,6 +2210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 playlistId, maxResults: 20 
             });
             const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?${params}`);
+            addQuotaCost('playlistItems'); // +1 Quota
             if (!res.ok) throw new Error('Fehler beim Laden der Playlist');
             const data = await res.json();
             
@@ -1536,6 +2247,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (['home', 'privacy', 'terms', 'settings'].includes(r.view)) {
                 setView(r.view);
+                if (r.view === 'settings') {
+                    renderChannelList();
+                }
             } else if (r.view === 'continue') {
                 setView('continue');
                 await showContinueWatchingView();
@@ -1557,7 +2271,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else { 
                 navigate('home'); 
             }
-        } catch (e) { console.error(`Fehler bei Navigation:`, e); showStatus(e.message, true); }
+        } catch (e) { console.error(`Fehler bei Navigation:`, e); showStatus(e.message, 'error'); }
     };
     
     const showChannelContent = async (type, { reset = true } = {}) => {
@@ -1583,6 +2297,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.current[pageTokenKey]) params.set('pageToken', state.current[pageTokenKey]);
 
             const res = await fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${params}`);
+            addQuotaCost(isVideos ? 'playlistItems' : 'playlists'); // +1 Quota
             if (!res.ok) throw new Error('API-Fehler beim Laden von Inhalten');
             const data = await res.json();
             
@@ -1602,7 +2317,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
             hideStatus();
-        } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, true); }
+        } catch(e) { showStatus(`Fehler beim Laden von ${type}: ${e.message}`, 'error'); }
     };
     
     const searchInChannel = async () => {
@@ -1615,23 +2330,62 @@ document.addEventListener('DOMContentLoaded', () => {
         // Zeige Kreuz-Button
         els.clearSearchBtn.classList.remove('hidden');
         
+        // Bestimme aktuellen Tab
+        const isVideos = state.current.tab === 'videos';
+        const searchType = isVideos ? 'video' : 'playlist';
+        const targetTab = isVideos ? els.videosTab : els.playlistsTab;
+        
         els.sortOptions.classList.remove('hidden');
         document.querySelectorAll('[data-sort]').forEach(btn => btn.classList.toggle('active', btn.dataset.sort === state.current.searchOrder));
         showStatus(`Suche nach "${q}"...`);
-        els.videosTab.innerHTML = '';
+        targetTab.innerHTML = '';
+        
         try {
-            const params = new URLSearchParams({ key: YOUTUBE_API_KEY, part: 'snippet', maxResults: 25, channelId: state.current.channelId, q: `"${q}"`, type: 'video', order: state.current.searchOrder });
+            const params = new URLSearchParams({ 
+                key: YOUTUBE_API_KEY, 
+                part: 'snippet', 
+                maxResults: 25, 
+                channelId: state.current.channelId, 
+                q: `"${q}"`, 
+                type: searchType, 
+                order: state.current.searchOrder 
+            });
             const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
+            addQuotaCost('search'); // +100 Quota
             if(!res.ok) throw new Error('API-Fehler bei der Suche');
             const data = await res.json();
             
             const info = await getChannelInfo(state.current.channelId);
-            let items = await enrichVideosWithDuration(data.items || [], 'id');
-            items.forEach(it => {
-                els.videosTab.appendChild(videoCard({ videoId: it.id.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails.medium.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
-            });
+            
+            if (isVideos) {
+                // Videos durchsuchen
+                let items = await enrichVideosWithDuration(data.items || [], 'id');
+                items.forEach(it => {
+                    targetTab.appendChild(videoCard({ 
+                        videoId: it.id.videoId, 
+                        title: it.snippet.title, 
+                        date: it.snippet.publishedAt, 
+                        thumb: it.snippet.thumbnails.medium.url, 
+                        channelTitle: info.title, 
+                        durationSeconds: it.durationSeconds 
+                    }));
+                });
+            } else {
+                // Playlists durchsuchen
+                (data.items || []).forEach(it => {
+                    targetTab.appendChild(playlistCard({ 
+                        playlistId: it.id.playlistId, 
+                        channelId: state.current.channelId,
+                        title: it.snippet.title, 
+                        date: it.snippet.publishedAt, 
+                        thumb: it.snippet.thumbnails?.medium?.url, 
+                        channelTitle: info.title 
+                    }));
+                });
+            }
+            
             hideStatus();
-        } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, true); }
+        } catch(e) { showStatus(`Suche fehlgeschlagen: ${e.message}`, 'error'); }
     };
     
     const clearSearch = () => {
@@ -1713,7 +2467,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBgImage = async () => {
         if (!state.userId) {
             console.warn('❌ Kein User angemeldet - Hintergrundbild nicht gespeichert');
-            showStatus('Bitte melde dich an, um das Hintergrundbild zu speichern', true);
+            showStatus('Bitte melde dich an, um das Hintergrundbild zu speichern', 'error');
             return;
         }
         
@@ -1759,7 +2513,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error('❌ Fehler beim Speichern des Hintergrundbilds:', err);
-            showStatus('Fehler beim Speichern des Hintergrundbilds', true);
+            showStatus('Fehler beim Speichern des Hintergrundbilds', 'error');
         }
     };
     
@@ -1825,7 +2579,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!state.userId) {
             console.warn('❌ Kein User angemeldet');
-            showStatus('Bitte melde dich an, um das Hintergrundbild zu speichern', true);
+            showStatus('Bitte melde dich an, um das Hintergrundbild zu speichern', 'error');
             return;
         }
         
@@ -1856,7 +2610,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = '';
         } catch (err) {
             console.error('❌ Fehler beim Verarbeiten des Bildes:', err);
-            showStatus('Fehler beim Komprimieren des Bildes', true);
+            showStatus('Fehler beim Komprimieren des Bildes', 'error');
         }
     };
     
@@ -1946,6 +2700,10 @@ document.addEventListener('DOMContentLoaded', () => {
         els.bgImageInput.onchange = handleBgImageUpload;
         els.bgImageRemoveBtn.onclick = removeBgImage;
         
+        // Channel Management
+        els.addChannelBtn.onclick = addNewChannel;
+        els.addChannelInput.onkeydown = e => { if (e.key === 'Enter') addNewChannel(); };
+        
         els.overlay.onclick = e => { if (e.target === els.overlay) closePlayer(); };
         els.menuBtn.onclick = () => {
             els.sideMenu.classList.toggle('open');
@@ -2012,7 +2770,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const initAuth = () => {
         els.authBtn.onclick = () => {
             if (state.user) auth.signOut();
-            else auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => showStatus(`Anmeldung fehlgeschlagen: ${err.message}`, true));
+            else auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => showStatus(`Anmeldung fehlgeschlagen: ${err.message}`, 'error'));
         };
         auth.onAuthStateChanged(user => {
             const wasLoggedIn = !!state.user;
@@ -2043,6 +2801,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     loadSettings();
+    loadQuotaState();
+    state.channelsConfig = loadChannelConfig();
     setupEventListeners();
     loadTheme();
     applySettings();
@@ -2059,8 +2819,23 @@ document.addEventListener('DOMContentLoaded', () => {
             for(const key in data.videos) {
                 state.videoDetailsCache.set(key, data.videos[key]);
             }
+            console.log(`📦 ${Object.keys(data.videos || {}).length} Video-Details aus Firebase geladen`);
         }
     });
+    
+    // Channel-Info Cache beim Start laden
+    channelInfoCacheRef.get().then(doc => {
+        if(doc.exists) {
+            const data = doc.data();
+            let count = 0;
+            for(const key in data.channels) {
+                state.channels.set(key, data.channels[key]);
+                count++;
+            }
+            console.log(`📦 ${count} Channel-Infos aus Firebase geladen`);
+        }
+    }).catch(e => console.warn('Channel-Cache laden fehlgeschlagen:', e));
+    
     window.addEventListener('youtube-api-ready', initAuth);
 });
 </script>
