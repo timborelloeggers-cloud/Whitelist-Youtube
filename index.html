@@ -497,8 +497,9 @@
       color: var(--text);
     }
     .quota-value {
-      font-size: 0.85rem;
-      color: var(--muted);
+      font-size: 1rem;
+      color: var(--text);
+      font-weight: 600;
       font-family: monospace;
     }
     .quota-bar {
@@ -581,95 +582,146 @@
     
     /* Channel Management */
     .channel-management-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
       max-height: 400px;
       overflow-y: auto;
     }
+    @media (max-width: 768px) {
+      .channel-management-list {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 480px) {
+      .channel-management-list {
+        grid-template-columns: 1fr;
+      }
+    }
     .channel-item {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
-      padding: 12px;
+      gap: 10px;
+      padding: 16px 12px;
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px;
+      border-radius: 12px;
       transition: all 0.2s ease;
     }
     .channel-item:hover {
       background: rgba(255,255,255,0.06);
       border-color: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
     }
     .channel-item-thumb {
-      width: 40px;
-      height: 40px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
       object-fit: cover;
       flex-shrink: 0;
       background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
     }
     .channel-item-info {
-      flex: 1;
+      text-align: center;
+      width: 100%;
       min-width: 0;
     }
     .channel-item-name {
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-bottom: 2px;
     }
     .channel-item-handle {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .channel-item-actions {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
+      justify-content: center;
+      width: 100%;
       flex-shrink: 0;
     }
-    .favorite-checkbox {
-      width: 24px;
-      height: 24px;
+        .favorite-checkbox {
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            position: relative;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                color: rgba(0, 0, 0, 0.45);
+        }
+        .favorite-checkbox svg {
+            width: 18px;
+            height: 18px;
+            pointer-events: none;
+                fill: currentColor;
+                transition: color 0.3s ease, transform 0.3s ease;
+        }
+        .favorite-checkbox:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.25);
+            backdrop-filter: blur(12px);
+            transform: scale(1.05);
+                color: rgba(0, 0, 0, 0.7);
+        }
+        .favorite-checkbox.active {
+            background: rgba(251, 191, 36, 0.18);
+            border-color: rgba(251, 191, 36, 0.45);
+            backdrop-filter: blur(12px);
+                color: #fbbf24;
+        }
+        .favorite-checkbox.active:hover {
+            background: rgba(251, 191, 36, 0.22);
+            border-color: #facc15;
+            transform: scale(1.05);
+                color: #facc15;
+        }
+    .remove-channel-btn {
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+      background: rgba(239, 68, 68, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border-radius: 8px;
       cursor: pointer;
-      position: relative;
-      background: rgba(255,255,255,0.05);
-      border: 2px solid rgba(255,255,255,0.2);
-      border-radius: 6px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
     }
-    .favorite-checkbox:hover {
-      background: rgba(255,255,255,0.1);
-      border-color: #fbbf24;
-    }
-    .favorite-checkbox.active {
-      background: #fbbf24;
-      border-color: #fbbf24;
-    }
-    .favorite-checkbox.active::after {
-      content: '⭐';
-      font-size: 14px;
-    }
-    .remove-channel-btn {
-      padding: 6px 12px;
-      font-size: 0.85rem;
-      background: rgba(239,68,68,0.2);
-      border: 1px solid rgba(239,68,68,0.3);
-      color: #ef4444;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
+        .remove-channel-btn svg {
+            width: 18px;
+            height: 18px;
+            pointer-events: none;
+            stroke: currentColor;
+            stroke-width: 1.6;
+            fill: none;
+        }
     .remove-channel-btn:hover {
-      background: rgba(239,68,68,0.4);
-      border-color: #ef4444;
-      transform: translateY(-2px);
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.4);
+      backdrop-filter: blur(12px);
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
     }
     
     /* Light Mode */
@@ -681,9 +733,34 @@
       background: rgba(0,0,0,0.06);
       border-color: rgba(0,0,0,0.15);
     }
+    body.text-light .channel-item-thumb {
+      border-color: rgba(0,0,0,0.1);
+    }
     body.text-light .favorite-checkbox {
       background: rgba(0,0,0,0.05);
-      border-color: rgba(0,0,0,0.2);
+      border-color: rgba(0,0,0,0.15);
+            color: rgba(0,0,0,0.55);
+    }
+    body.text-light .favorite-checkbox:hover {
+      background: rgba(0,0,0,0.08);
+      border-color: rgba(0,0,0,0.25);
+            color: rgba(0,0,0,0.75);
+    }
+    body.text-light .favorite-checkbox.active {
+      background: rgba(251, 191, 36, 0.2);
+      border-color: rgba(251, 191, 36, 0.5);
+            color: #f59e0b;
+    }
+        body.text-light .favorite-checkbox.active:hover {
+            color: #fbbf24;
+        }
+    body.text-light .remove-channel-btn {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+    body.text-light .remove-channel-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.4);
     }
     body.text-light #addChannelInput {
       background: rgba(0,0,0,0.05) !important;
@@ -938,13 +1015,12 @@
   <div class="quota-container">
     <div class="quota-header">
       <span class="quota-label">API Kontingent</span>
-      <span class="quota-value" id="quotaValue">0 / 10.000</span>
+      <span class="quota-value" id="quotaPercent">0%</span>
     </div>
     <div class="quota-bar">
       <div class="quota-progress" id="quotaProgress"></div>
     </div>
     <div class="quota-info">
-      <span id="quotaPercent">0%</span>
       <span class="quota-reset">Reset: 09:00 Uhr</span>
     </div>
   </div>
@@ -1078,17 +1154,6 @@
         <div id="bgPreview" class="bg-preview hidden"></div>
         <p class="setting-hint">Das Hintergrundbild wird in deinem Browser gespeichert und mit deinem Google-Konto synchronisiert.</p>
       </div>
-
-      <div class="setting-group">
-        <label class="setting-label">Theme wechseln</label>
-        <p style="color: var(--muted); line-height: 1.6;">
-          Du kannst das Theme (Hell/Dunkel) jetzt direkt über den 
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
-            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
-          </svg>
-          Button in der oberen Navigationsleiste wechseln.
-        </p>
-      </div>
       
       <div class="setting-group">
         <label class="setting-label">Kanal-Verwaltung</label>
@@ -1111,7 +1176,7 @@
           </div>
         </div>
         
-        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 12px;">Deine Kanäle (⭐ = Favorit):</p>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 12px;">Deine Kanäle:</p>
         <div id="channelManagementList" class="channel-management-list"></div>
         <p class="setting-hint">Favoriten erscheinen ganz oben auf der Startseite. Du kannst Kanäle auch komplett entfernen.</p>
       </div>
@@ -1291,7 +1356,6 @@ document.addEventListener('DOMContentLoaded', () => {
         themeToggleBtn: document.getElementById('themeToggleBtn'),
         durationValue: document.getElementById('durationValue'),
         durationMinusBtn: document.getElementById('durationMinusBtn'),
-        quotaValue: document.getElementById('quotaValue'),
         quotaProgress: document.getElementById('quotaProgress'),
         quotaPercent: document.getElementById('quotaPercent'),
         durationPlusBtn: document.getElementById('durationPlusBtn'),
@@ -1412,7 +1476,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const { used, limit } = state.quota;
         const percent = Math.min(100, Math.round((used / limit) * 100));
         
-        els.quotaValue.textContent = `${used.toLocaleString()} / ${limit.toLocaleString()}`;
         els.quotaPercent.textContent = `${percent}%`;
         els.quotaProgress.style.width = `${percent}%`;
         
@@ -1486,10 +1549,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="channel-item-actions">
                     <button class="favorite-checkbox ${channelConfig.isFavorite ? 'active' : ''}" data-handle="${channelConfig.handle}" title="Als Favorit markieren">
-                        ${channelConfig.isFavorite ? '⭐' : '☆'}
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m12 2 2.317 4.695 5.183.754-3.75 3.656.885 5.166L12 13.77l-4.635 2.501.885-5.166-3.75-3.656 5.183-.754L12 2z"/>
+                        </svg>
                     </button>
                     <button class="remove-channel-btn" data-handle="${channelConfig.handle}" title="Kanal entfernen">
-                        🗑️
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 7h12" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 7V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M8 7v11a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </button>
                 </div>
             `;
@@ -1514,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    const toggleFavorite = (handle) => {
+    const toggleFavorite = async (handle) => {
         const config = loadChannelConfig();
         const channel = config.find(c => c.handle === handle);
         
@@ -1522,6 +1591,27 @@ document.addEventListener('DOMContentLoaded', () => {
             channel.isFavorite = !channel.isFavorite;
             saveChannelConfig(config);
             renderChannelList();
+            
+            // Aktualisiere auch den Firebase Cache
+            try {
+                const cacheDoc = await homeCacheRef.get();
+                if (cacheDoc.exists) {
+                    const data = cacheDoc.data();
+                    if (data.channels) {
+                        // Finde den Kanal im Cache
+                        const cachedChannel = data.channels.find(ch => 
+                            ch.handle === handle || ch.title.toLowerCase().includes(handle.toLowerCase().replace('@', ''))
+                        );
+                        if (cachedChannel) {
+                            cachedChannel.isFavorite = channel.isFavorite;
+                            await homeCacheRef.update({ channels: data.channels });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Fehler beim Aktualisieren des Cache:', e);
+            }
+            
             showNotification(channel.isFavorite ? 'Als Favorit markiert ⭐' : 'Favorit entfernt ☆', 'success');
         }
     };
@@ -1940,77 +2030,176 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const getChannelInfo = async (identifier) => {
+        const isHandle = identifier.startsWith('@');
+        const cleanHandle = isHandle ? identifier.replace(/^@+/, '') : null;
+
+        const buildChannelInfo = (channel) => {
+            const banner = channel.brandingSettings?.image?.bannerTvImageUrl?.replace(/=w\d+/, '=w2560') || null;
+            const resolvedHandle = channel.snippet?.customUrl?.startsWith('@')
+                ? channel.snippet.customUrl
+                : (isHandle ? identifier : null);
+            return {
+                id: channel.id,
+                title: channel.snippet?.title,
+                thumb: channel.snippet?.thumbnails?.default?.url,
+                uploadsId: channel.contentDetails?.relatedPlaylists?.uploads,
+                banner,
+                handle: resolvedHandle || null
+            };
+        };
+
+        const cacheKeys = new Set([identifier]);
+        if (isHandle) {
+            cacheKeys.add(identifier.toLowerCase());
+        }
+
+        const saveToLocalCache = (info) => {
+            cacheKeys.forEach(key => state.channels.set(key, info));
+            state.channels.set(info.id, info);
+            if (info.handle) {
+                cacheKeys.add(info.handle);
+                cacheKeys.add(info.handle.toLowerCase());
+                state.channels.set(info.handle, info);
+                state.channels.set(info.handle.toLowerCase(), info);
+            }
+        };
+
+        const persistToFirebase = (info) => {
+            channelInfoCacheRef.get().then(doc => {
+                const existing = doc.exists ? doc.data().channels || {} : {};
+                cacheKeys.forEach(key => existing[key] = info);
+                existing[info.id] = info;
+                if (info.handle) {
+                    existing[info.handle] = info;
+                    existing[info.handle.toLowerCase()] = info;
+                }
+                return channelInfoCacheRef.set({ channels: existing }, { merge: true });
+            }).then(() => {
+                console.log(`✅ Channel-Info in Firebase gespeichert: ${info.id}`);
+            }).catch(e => console.error('Channel-Cache-Update fehlgeschlagen:', e));
+        };
+
         // 1. Prüfe lokalen Cache
         if (state.channels.has(identifier)) {
             console.log(`📦 Channel-Info aus lokalem Cache: ${identifier}`);
             return state.channels.get(identifier);
         }
-        
-        let channelId = identifier;
-        let info = null;
-        
-        // 2. Handle zu ID auflösen (falls nötig)
-        if (identifier.startsWith('@')) {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${identifier}&type=channel&maxResults=1&key=${YOUTUBE_API_KEY}`);
-            addQuotaCost('search'); // +100 Quota
-            if (!res.ok) throw new Error('API Error');
-            const searchData = await res.json();
-            channelId = searchData.items?.[0]?.snippet?.channelId;
-            if (!channelId) throw new Error(`Kanal-Handle '${identifier}' nicht gefunden.`);
-            
-            // Prüfe ob wir die ID schon gecacht haben
-            if (state.channels.has(channelId)) {
-                console.log(`📦 Channel-Info aus lokalem Cache (via ID): ${channelId}`);
-                info = state.channels.get(channelId);
-                state.channels.set(identifier, info); // Cache auch unter Handle
-                return info;
-            }
+        if (isHandle && state.channels.has(identifier.toLowerCase())) {
+            const cached = state.channels.get(identifier.toLowerCase());
+            state.channels.set(identifier, cached);
+            return cached;
         }
-        
-        // 3. Prüfe Firebase Cache
+
+        let channelId = isHandle ? null : identifier;
+
+        // 2. Handle via Suche auflösen (falls nötig)
+        if (isHandle && !channelId) {
+            console.log(`🔍 Suche Kanal für Handle: ${identifier}`);
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(identifier)}&type=channel&maxResults=10&key=${YOUTUBE_API_KEY}`);
+            addQuotaCost('search'); // +100 Quota
+            if (!res.ok) throw new Error('API Error beim Suchen');
+            const searchData = await res.json();
+            
+            if (!searchData.items || searchData.items.length === 0) {
+                throw new Error(`Kanal-Handle '${identifier}' nicht gefunden.`);
+            }
+            
+            console.log(`🔍 Gefundene Kanäle:`, searchData.items.map(item => ({
+                title: item.snippet?.channelTitle,
+                id: item.snippet?.channelId
+            })));
+            
+            // Hole alle Channel-IDs und deren Details um customUrl zu vergleichen
+            const channelIds = searchData.items.map(item => item.snippet?.channelId).filter(Boolean).slice(0, 5);
+            
+            if (channelIds.length > 0) {
+                const detailsRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings&id=${channelIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+                addQuotaCost('channels'); // +1 Quota
+                
+                if (detailsRes.ok) {
+                    const detailsData = await detailsRes.json();
+                    
+                    // Suche nach exakter Handle-Übereinstimmung
+                    const exactMatch = detailsData.items?.find(ch => {
+                        const customUrl = ch.snippet?.customUrl;
+                        if (!customUrl) return false;
+                        
+                        const normalizedCustomUrl = customUrl.toLowerCase().replace(/^@/, '');
+                        const normalizedInput = cleanHandle.toLowerCase();
+                        
+                        console.log(`Vergleiche: "${normalizedCustomUrl}" === "${normalizedInput}"`);
+                        return normalizedCustomUrl === normalizedInput;
+                    });
+                    
+                    if (exactMatch) {
+                        console.log(`✅ Exakte Übereinstimmung gefunden: ${exactMatch.snippet?.title}`);
+                        const info = buildChannelInfo(exactMatch);
+                        saveToLocalCache(info);
+                        persistToFirebase(info);
+                        return info;
+                    }
+                    
+                    // Falls keine exakte Übereinstimmung, versuche Title-Match
+                    const titleMatch = detailsData.items?.find(ch => {
+                        const title = ch.snippet?.title?.toLowerCase() || '';
+                        const normalizedInput = cleanHandle.toLowerCase();
+                        return title === normalizedInput || title.replace(/\s/g, '') === normalizedInput;
+                    });
+                    
+                    if (titleMatch) {
+                        console.log(`✅ Title-Match gefunden: ${titleMatch.snippet?.title}`);
+                        const info = buildChannelInfo(titleMatch);
+                        saveToLocalCache(info);
+                        persistToFirebase(info);
+                        return info;
+                    }
+                    
+                    // Letzter Fallback: nimm den ersten
+                    console.warn(`⚠️ Keine exakte Übereinstimmung, verwende ersten Treffer`);
+                    if (detailsData.items?.[0]) {
+                        const info = buildChannelInfo(detailsData.items[0]);
+                        saveToLocalCache(info);
+                        persistToFirebase(info);
+                        return info;
+                    }
+                }
+            }
+            
+            throw new Error(`Kanal-Handle '${identifier}' konnte nicht aufgelöst werden.`);
+        }
+
+        // 4. Prüfe Firebase Cache
         try {
             const cacheDoc = await channelInfoCacheRef.get();
             if (cacheDoc.exists) {
-                const cached = cacheDoc.data().channels?.[channelId];
+                const channelsCache = cacheDoc.data().channels || {};
+                const cached = channelsCache[channelId] || channelsCache[identifier] || (isHandle ? channelsCache[identifier.toLowerCase()] : null);
                 if (cached) {
-                    console.log(`🔥 Channel-Info aus Firebase Cache: ${channelId}`);
-                    state.channels.set(identifier, cached);
-                    state.channels.set(channelId, cached);
+                    console.log(`🔥 Channel-Info aus Firebase Cache: ${channelId || identifier}`);
+                    saveToLocalCache(cached);
                     return cached;
                 }
             }
         } catch (e) {
             console.warn('Firebase Cache-Check fehlgeschlagen:', e);
         }
-        
-        // 4. API-Call (nur wenn wirklich nicht gecacht)
+
+        if (!channelId) {
+            throw new Error(`Kanal konnte nicht aufgelöst werden: ${identifier}`);
+        }
+
+        // 5. API-Call (nur wenn wirklich nicht gecacht)
         console.log(`🌐 Lade Channel-Info von API: ${channelId}`);
         const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings&id=${channelId}&key=${YOUTUBE_API_KEY}`);
         addQuotaCost('channels'); // +1 Quota
         if (!res.ok) throw new Error('API Error');
         const data = await res.json();
-        const c = data.items?.[0];
-        if (!c) throw new Error(`Kanal-Info für ID ${channelId} nicht gefunden.`);
-        
-        const banner = c.brandingSettings?.image?.bannerTvImageUrl?.replace(/=w\d+/, '=w2560') || null;
-        info = { id: c.id, title: c.snippet?.title, thumb: c.snippet?.thumbnails?.default?.url, uploadsId: c.contentDetails?.relatedPlaylists?.uploads, banner };
-        
-        // 5. Speichere in lokalem Cache
-        state.channels.set(identifier, info);
-        state.channels.set(info.id, info);
-        
-        // 6. Speichere in Firebase Cache (async, blockiert nicht)
-        channelInfoCacheRef.get().then(doc => {
-            const existing = doc.exists ? doc.data().channels || {} : {};
-            existing[info.id] = info;
-            if (identifier.startsWith('@')) {
-                existing[identifier] = info; // Speichere auch Handle
-            }
-            return channelInfoCacheRef.set({ channels: existing }, { merge: true });
-        }).then(() => {
-            console.log(`✅ Channel-Info in Firebase gespeichert: ${info.id}`);
-        }).catch(e => console.error('Channel-Cache-Update fehlgeschlagen:', e));
-        
+        const channel = data.items?.[0];
+        if (!channel) throw new Error(`Kanal-Info für ID ${channelId} nicht gefunden.`);
+
+        const info = buildChannelInfo(channel);
+        saveToLocalCache(info);
+        persistToFirebase(info);
         return info;
     };
     
