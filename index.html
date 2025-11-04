@@ -1672,6 +1672,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         await renderChannelList();
         showNotification(`Kanal ${channelName} entfernt 🗑️`, 'success');
+        
+        // Aktualisiere Firebase Cache automatisch
+        console.log('🔄 Aktualisiere Homepage nach Kanal-Entfernung...');
+        await forceUpdateAndCacheToFirebase();
     };
     
     const addNewChannel = async () => {
@@ -1775,8 +1779,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        // Speichere mit dem Handle oder der Channel-ID (was gefunden wurde)
+        const saveHandle = info.handle || handle;
+        console.log('💾 Speichere Kanal mit Handle:', saveHandle);
+        
         // Füge hinzu
-        config.push({ handle: handle, isFavorite: false });
+        config.push({ handle: saveHandle, isFavorite: false });
         saveChannelConfig(config);
         
         // Leere Input
@@ -3145,4 +3153,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
