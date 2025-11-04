@@ -581,6 +581,39 @@
     .color-option.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,0,51,0.2); }
     
     /* Channel Management */
+    .channel-add-section .channel-add-input-wrapper {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .channel-add-section input {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    .channel-add-section button {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    @media (max-width: 600px) {
+      .channel-add-section .channel-add-input-wrapper {
+        flex-direction: column;
+      }
+      .channel-add-section input {
+        width: 100%;
+        min-width: unset;
+      }
+      .channel-add-section button {
+        width: 100%;
+      }
+    }
+    
     .channel-management-list {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -591,9 +624,16 @@
     @media (max-width: 768px) {
       .channel-management-list {
         grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
     }
-    @media (max-width: 480px) {
+    @media (max-width: 600px) {
+      .channel-management-list {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+    }
+    @media (max-width: 400px) {
       .channel-management-list {
         grid-template-columns: 1fr;
       }
@@ -1159,13 +1199,12 @@
         <label class="setting-label">Kanal-Verwaltung</label>
         
         <div class="channel-add-section">
-          <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 12px;">Neuen Kanal hinzufügen:</p>
-          <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+          <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 12px;">Neuen Kanal hinzufügen (YouTube-URL eingeben):</p>
+          <div class="channel-add-input-wrapper">
             <input 
               type="text" 
               id="addChannelInput" 
-              placeholder="@Kanalname oder youtube.com/@..." 
-              style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text); font-size: 0.9rem;"
+              placeholder="https://www.youtube.com/@Kanalname"
             />
             <button class="btn" id="addChannelBtn">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;">
@@ -1747,6 +1786,10 @@ document.addEventListener('DOMContentLoaded', () => {
         await renderChannelList();
         hideStatus();
         showNotification(`Kanal ${info.title} hinzugefügt ✓`, 'success');
+        
+        // Starte automatisch Daten-Aktualisierung für die Homepage
+        console.log('🔄 Starte automatische Aktualisierung nach Kanal-Hinzufügung...');
+        await forceUpdateAndCacheToFirebase();
     };
 
     // ===== UTILS & HELPERS =====
