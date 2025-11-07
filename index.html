@@ -1621,7 +1621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         els.channelManagementList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--muted);">Lädt Kanäle...</div>';
         
-        const config = loadChannelConfig();
+        const config = await loadChannelConfig();
         if (config.length === 0) {
             els.channelManagementList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--muted);">Keine Kanäle vorhanden</div>';
             return;
@@ -1681,13 +1681,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const toggleFavorite = async (handle) => {
-        const config = loadChannelConfig();
+        const config = await loadChannelConfig();
         const channel = config.find(c => c.handle === handle);
         
         if (channel) {
             channel.isFavorite = !channel.isFavorite;
-            saveChannelConfig(config);
-            renderChannelList();
+            await saveChannelConfig(config);
+            await renderChannelList();
             
             // Aktualisiere auch den Firebase Cache
             try {
@@ -1714,7 +1714,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const removeChannel = async (handle) => {
-        const config = loadChannelConfig();
+        const config = await loadChannelConfig();
         
         if (config.length <= 1) {
             showNotification('Mindestens ein Kanal muss vorhanden bleiben', 'error');
@@ -1726,7 +1726,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const channelName = config[index].handle;
         config.splice(index, 1);
-        saveChannelConfig(config);
+        await saveChannelConfig(config);
         
         await renderChannelList();
         showNotification(`Kanal ${channelName} entfernt 🗑️`, 'success');
@@ -1781,7 +1781,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.channels.delete(handle.toLowerCase());
         console.log('🧹 Cache gelöscht für Handle:', handle);
         
-        const config = loadChannelConfig();
+        const config = await loadChannelConfig();
         
         // Prüfe auf Duplikat
         if (config.find(c => c.handle.toLowerCase() === handle.toLowerCase())) {
@@ -1888,7 +1888,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Füge hinzu
         config.push({ handle: saveHandle, isFavorite: false });
-        saveChannelConfig(config);
+        await saveChannelConfig(config);
         
         // Leere Input
         els.addChannelInput.value = '';
@@ -2523,7 +2523,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showSkeletons(els.otherChannelGrid, 7, 'channel');
         showSkeletons(els.latestVideosGrid, 8, 'video');
         
-        const channelsConfig = loadChannelConfig();
+        const channelsConfig = await loadChannelConfig();
         const successfulChannels = [];
         for (const config of channelsConfig) {
             try {
@@ -2662,7 +2662,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (['home', 'privacy', 'terms', 'settings'].includes(r.view)) {
                 setView(r.view);
                 if (r.view === 'settings') {
-                    renderChannelList();
+                    await renderChannelList();
                 }
             } else if (r.view === 'continue') {
                 setView('continue');
