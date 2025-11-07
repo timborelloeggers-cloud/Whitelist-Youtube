@@ -1721,7 +1721,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // LÖSCHE CACHE für diesen Handle (zum Debuggen)
         state.channels.delete(handle);
         state.channels.delete(handle.toLowerCase());
-        console.log('🧹 Cache gelöscht für:', handle);
+        console.log('🧹 Cache gelöscht für Handle:', handle);
         
         const config = loadChannelConfig();
         
@@ -1758,6 +1758,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (match && match[1]) {
                         channelId = match[1];
                         console.log('✅ Channel-ID gefunden:', channelId);
+                        
+                        // WICHTIG: Lösche auch Cache für die Channel-ID!
+                        state.channels.delete(channelId);
+                        console.log('🧹 Cache gelöscht für Channel-ID:', channelId);
                         break;
                     }
                 }
@@ -1788,6 +1792,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (channelId) {
             console.log('🎯 Verwende extrahierte Channel-ID:', channelId);
             info = await getChannelInfo(channelId);
+            
+            // WICHTIG: Überschreibe den Handle im Cache mit dem offiziellen!
+            if (info && officialHandle) {
+                console.log('🔧 Überschreibe Cache: Setze', officialHandle, '→', info.id);
+                info.handle = officialHandle; // Überschreibe mit offiziellem Handle
+                
+                // Speichere im lokalen Cache für den offiziellen Handle
+                state.channels.set(officialHandle, info);
+                state.channels.set(officialHandle.toLowerCase(), info);
+                
+                // Speichere auch in Firebase Cache
+                channelInfoCacheRef.get().then(doc => {
+                    const existing = doc.exists ? doc.data().channels || {} : {};
+                    existing[officialHandle] = info;
+                    existing[officialHandle.toLowerCase()] = info;
+                    return channelInfoCacheRef.set({ channels: existing }, { merge: true });
+                }).then(() => {
+                    console.log('✅ Offizieller Handle in Cache gespeichert:', officialHandle);
+                }).catch(e => console.error('Cache-Update fehlgeschlagen:', e));
+            }
         } else {
             // Fallback: Normale Suche (riskant, kann falschen Kanal finden!)
             console.warn('⚠️ Keine Channel-ID via Scraping gefunden, verwende Search API (kann ungenau sein)');
