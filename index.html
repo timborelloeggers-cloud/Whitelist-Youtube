@@ -1458,8 +1458,31 @@ document.addEventListener('DOMContentLoaded', () => {
         playlists: 1
     };
     
-    const loadQuotaState = () => {
+    const loadQuotaState = async () => {
         try {
+            // Versuche zuerst von Firebase zu laden (wenn User angemeldet)
+            if (state.userId) {
+                try {
+                    const doc = await db.collection('users').doc(state.userId).collection('settings').doc('apiQuota').get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        state.quota = data;
+                        console.log('📊 API Quota aus Firebase geladen:', data.used, '/', data.limit);
+                        
+                        // Prüfe ob Reset-Zeit überschritten
+                        if (data.resetTime && new Date() >= new Date(data.resetTime)) {
+                            resetQuota();
+                        } else {
+                            updateQuotaUI();
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Firebase Quota laden fehlgeschlagen, verwende localStorage:', e);
+                }
+            }
+            
+            // Fallback: localStorage
             const saved = localStorage.getItem('apiQuota');
             if (saved) {
                 const data = JSON.parse(saved);
@@ -1468,6 +1491,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Prüfe ob Reset-Zeit überschritten
                 if (data.resetTime && new Date() >= new Date(data.resetTime)) {
                     resetQuota();
+                } else {
+                    updateQuotaUI();
                 }
             } else {
                 resetQuota();
@@ -1476,12 +1501,18 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Quota laden fehlgeschlagen:', e);
             resetQuota();
         }
-        updateQuotaUI();
     };
     
-    const saveQuotaState = () => {
+    const saveQuotaState = async () => {
         try {
+            // Speichere in localStorage (Fallback)
             localStorage.setItem('apiQuota', JSON.stringify(state.quota));
+            
+            // Speichere in Firebase (wenn User angemeldet)
+            if (state.userId) {
+                await db.collection('users').doc(state.userId).collection('settings').doc('apiQuota').set(state.quota);
+                console.log('📊 API Quota in Firebase gespeichert:', state.quota.used, '/', state.quota.limit);
+            }
         } catch (e) {
             console.error('Quota speichern fehlgeschlagen:', e);
         }
@@ -1536,8 +1567,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 60000); // Jede Minute
 
     // ===== CHANNEL MANAGEMENT =====
-    const loadChannelConfig = () => {
+    const loadChannelConfig = async () => {
         try {
+            // Versuche zuerst von Firebase zu laden (wenn User angemeldet)
+            if (state.userId) {
+                try {
+                    const doc = await db.collection('users').doc(state.userId).collection('settings').doc('channelConfig').get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (data.channels && Array.isArray(data.channels)) {
+                            console.log('📺 Kanal-Konfiguration aus Firebase geladen:', data.channels.length, 'Kanäle');
+                            return data.channels;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Firebase ChannelConfig laden fehlgeschlagen, verwende localStorage:', e);
+                }
+            }
+            
+            // Fallback: localStorage
             const saved = localStorage.getItem('channelConfig');
             if (saved) {
                 return JSON.parse(saved);
@@ -1549,10 +1597,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return CHANNELS_CONFIG.slice();
     };
     
-    const saveChannelConfig = (config) => {
+    const saveChannelConfig = async (config) => {
         try {
+            // Speichere in localStorage (Fallback)
             localStorage.setItem('channelConfig', JSON.stringify(config));
             state.channelsConfig = config;
+            
+            // Speichere in Firebase (wenn User angemeldet)
+            if (state.userId) {
+                await db.collection('users').doc(state.userId).collection('settings').doc('channelConfig').set({
+                    channels: config,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('📺 Kanal-Konfiguration in Firebase gespeichert:', config.length, 'Kanäle');
+            }
         } catch (e) {
             console.error('Fehler beim Speichern der Kanal-Konfiguration:', e);
         }
@@ -3128,7 +3186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.user) auth.signOut();
             else auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => showStatus(`Anmeldung fehlgeschlagen: ${err.message}`, 'error'));
         };
-        auth.onAuthStateChanged(user => {
+        auth.onAuthStateChanged(async user => {
             const wasLoggedIn = !!state.user;
             state.user = user; state.userId = user?.uid;
             
@@ -3144,6 +3202,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 setupProgressListener();
                 loadBgImage();
                 loadMyList();
+                
+                // WICHTIG: Lade API Quota und Kanal-Config von Firebase
+                await loadQuotaState();
+                const config = await loadChannelConfig();
+                state.channelsConfig = config;
+                
+                // Rendere Kanal-Liste neu falls wir auf Settings-Seite sind
+                if (window.location.hash.includes('settings')) {
+                    await renderChannelList();
+                }
             } else {
                 if (state.progressListenerUnsubscribe) state.progressListenerUnsubscribe();
                 state.progressData.clear();
@@ -3156,12 +3224,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    loadSettings();
-    loadQuotaState();
-    state.channelsConfig = loadChannelConfig();
-    setupEventListeners();
-    loadTheme();
-    applySettings();
+    // App-Initialisierung
+    (async () => {
+        loadSettings();
+        await loadQuotaState();
+        state.channelsConfig = await loadChannelConfig();
+        setupEventListeners();
+        loadTheme();
+        applySettings();
+    })();
+    
     homeCacheRef.onSnapshot(doc => {
         if (doc.exists) {
             renderHomeFromFirebase(doc.data());
