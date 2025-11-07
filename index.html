@@ -1687,30 +1687,36 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Parse URL falls vorhanden
+        // Robuste URL-Parsing mit Regex für verschiedene YouTube-Formate
         let identifier = input;
         
-        // Prüfe ob es eine YouTube URL ist
-        if (input.includes('youtube.com/') || input.includes('youtu.be/')) {
-            try {
-                const url = new URL(input.startsWith('http') ? input : 'https://' + input);
-                
-                // Extrahiere @handle aus URL wie youtube.com/@DoktorWhatson
-                if (url.pathname.startsWith('/@')) {
-                    identifier = url.pathname.split('/')[1]; // z.B. /@DoktorWhatson
-                    console.log('🔗 Handle aus URL extrahiert:', identifier);
+        // Regex patterns für verschiedene YouTube URL-Formate
+        const patterns = [
+            /youtube\.com\/@([^\/\?]+)/,      // youtube.com/@handle
+            /youtube\.com\/channel\/(UC[^\/\?]+)/, // youtube.com/channel/UC...
+            /youtu\.be\/([^\/\?]+)/,          // youtu.be/id
+        ];
+        
+        // Prüfe ob es eine YouTube URL ist und extrahiere Identifier
+        for (const pattern of patterns) {
+            const match = input.match(pattern);
+            if (match) {
+                identifier = match[1];
+                // Bei @-URLs das @ wieder hinzufügen
+                if (pattern.source.includes('@')) {
+                    identifier = '@' + identifier;
                 }
-                // Extrahiere Channel-ID aus URL wie youtube.com/channel/UCxxxxx
-                else if (url.pathname.startsWith('/channel/')) {
-                    identifier = url.pathname.split('/')[2]; // Channel-ID
-                    console.log('🔗 Channel-ID aus URL extrahiert:', identifier);
-                }
-            } catch (e) {
-                console.warn('URL-Parsing fehlgeschlagen:', e);
+                console.log('🔗 Identifier aus URL extrahiert:', identifier);
+                break;
             }
         }
         
-        // Stelle sicher, dass Handle mit @ beginnt (falls es keins ist)
+        // Fallback: Wenn keine URL erkannt wurde, behandle als direkten Handle
+        if (identifier === input) {
+            console.log('🔍 Keine URL erkannt, behandle als direkten Handle:', identifier);
+        }
+        
+        // Stelle sicher, dass Handle mit @ beginnt (falls es kein Channel-ID ist)
         if (!identifier.startsWith('UC') && !identifier.startsWith('@')) {
             identifier = '@' + identifier;
         }
