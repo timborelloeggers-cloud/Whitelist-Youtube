@@ -1687,36 +1687,30 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Robuste URL-Parsing mit Regex für verschiedene YouTube-Formate
+        // Parse URL falls vorhanden
         let identifier = input;
         
-        // Regex patterns für verschiedene YouTube URL-Formate
-        const patterns = [
-            /youtube\.com\/@([^\/\?]+)/,      // youtube.com/@handle
-            /youtube\.com\/channel\/(UC[^\/\?]+)/, // youtube.com/channel/UC...
-            /youtu\.be\/([^\/\?]+)/,          // youtu.be/id
-        ];
-        
-        // Prüfe ob es eine YouTube URL ist und extrahiere Identifier
-        for (const pattern of patterns) {
-            const match = input.match(pattern);
-            if (match) {
-                identifier = match[1];
-                // Bei @-URLs das @ wieder hinzufügen
-                if (pattern.source.includes('@')) {
-                    identifier = '@' + identifier;
+        // Prüfe ob es eine YouTube URL ist
+        if (input.includes('youtube.com/') || input.includes('youtu.be/')) {
+            try {
+                const url = new URL(input.startsWith('http') ? input : 'https://' + input);
+                
+                // Extrahiere @handle aus URL wie youtube.com/@DoktorWhatson
+                if (url.pathname.startsWith('/@')) {
+                    identifier = url.pathname.split('/')[1]; // z.B. /@DoktorWhatson
+                    console.log('🔗 Handle aus URL extrahiert:', identifier);
                 }
-                console.log('🔗 Identifier aus URL extrahiert:', identifier);
-                break;
+                // Extrahiere Channel-ID aus URL wie youtube.com/channel/UCxxxxx
+                else if (url.pathname.startsWith('/channel/')) {
+                    identifier = url.pathname.split('/')[2]; // Channel-ID
+                    console.log('🔗 Channel-ID aus URL extrahiert:', identifier);
+                }
+            } catch (e) {
+                console.warn('URL-Parsing fehlgeschlagen:', e);
             }
         }
         
-        // Fallback: Wenn keine URL erkannt wurde, behandle als direkten Handle
-        if (identifier === input) {
-            console.log('🔍 Keine URL erkannt, behandle als direkten Handle:', identifier);
-        }
-        
-        // Stelle sicher, dass Handle mit @ beginnt (falls es kein Channel-ID ist)
+        // Stelle sicher, dass Handle mit @ beginnt (falls es keins ist)
         if (!identifier.startsWith('UC') && !identifier.startsWith('@')) {
             identifier = '@' + identifier;
         }
@@ -1740,24 +1734,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // Zeige Loading
         showStatus('Suche Kanal...', 'loading');
         
-        // Wenn URL eingegeben wurde, versuche Channel-ID direkt zu extrahieren
+        // Wenn URL eingegeben wurde, versuche Channel-ID UND Handle direkt zu extrahieren
         let channelId = null;
+        let officialHandle = null;
+        
         if (input.includes('youtube.com/')) {
             try {
-                console.log('🌐 Versuche Channel-ID von YouTube-Seite zu extrahieren...');
+                console.log('🌐 Versuche Channel-ID & Handle von YouTube-Seite zu extrahieren...');
                 const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(input);
                 const response = await fetch(proxyUrl);
                 const html = await response.text();
                 
-                // Suche nach Channel-ID in verschiedenen Formaten
-                const patterns = [
+                // 1. Suche nach Channel-ID in verschiedenen Formaten
+                const channelIdPatterns = [
                     /"channelId":"(UC[^"]+)"/,
                     /"externalId":"(UC[^"]+)"/,
                     /youtube\.com\/channel\/(UC[^"\/\?]+)/,
                     /"browse_id":"(UC[^"]+)"/
                 ];
                 
-                for (const pattern of patterns) {
+                for (const pattern of channelIdPatterns) {
                     const match = html.match(pattern);
                     if (match && match[1]) {
                         channelId = match[1];
@@ -1765,8 +1761,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         break;
                     }
                 }
+                
+                // 2. Suche nach offiziellem Handle (@...)
+                const handlePatterns = [
+                    /"canonicalBaseUrl":"\/(@[^"]+)"/,
+                    /"vanityChannelUrl":"[^"]*\/(@[^"]+)"/,
+                    /"canonicalChannelUrl":"[^"]*\/(@[^"]+)"/,
+                    /rel="canonical" href="https:\/\/www\.youtube\.com\/(@[^"]+)"/
+                ];
+                
+                for (const pattern of handlePatterns) {
+                    const match = html.match(pattern);
+                    if (match && match[1] && match[1].startsWith('@')) {
+                        officialHandle = match[1];
+                        console.log('✅ Offizieller Handle gefunden:', officialHandle);
+                        break;
+                    }
+                }
             } catch (e) {
-                console.warn('Channel-ID Extraktion fehlgeschlagen:', e);
+                console.warn('Scraping fehlgeschlagen:', e);
             }
         }
         
@@ -1776,7 +1789,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('🎯 Verwende extrahierte Channel-ID:', channelId);
             info = await getChannelInfo(channelId);
         } else {
-            // Fallback: Normale Suche
+            // Fallback: Normale Suche (riskant, kann falschen Kanal finden!)
+            console.warn('⚠️ Keine Channel-ID via Scraping gefunden, verwende Search API (kann ungenau sein)');
             info = await getChannelInfo(handle);
         }
         
@@ -1785,9 +1799,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Speichere mit dem Handle oder der Channel-ID (was gefunden wurde)
-        const saveHandle = info.handle || handle;
-        console.log('💾 Speichere Kanal mit Handle:', saveHandle);
+        // WICHTIG: Verwende den gescrapten Handle, NICHT den aus der API!
+        // Die API gibt oft lowercase-Versionen zurück, was zu Problemen führt
+        const saveHandle = officialHandle || info.handle || handle;
+        console.log('💾 Speichere Kanal mit Handle:', saveHandle, officialHandle ? '(aus Scraping)' : '(aus API)');
         
         // Füge hinzu
         config.push({ handle: saveHandle, isFavorite: false });
