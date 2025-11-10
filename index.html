@@ -209,6 +209,12 @@
         backdrop-filter: blur(12px);
         display:flex; flex-direction: column; gap:8px; align-items:center; text-align:center; cursor:pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        opacity: 0;
+        animation: fadeInPlace 0.3s ease forwards;
+    }
+    @keyframes fadeInPlace {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
     .chan-card:hover{transform: translateY(-4px); box-shadow: 0 15px 35px rgba(0,0,0,.45); background:rgba(20,20,20,0.7);}
     .chan-thumb{width:48px;height:48px;border-radius:50%;background:#2b2b2b;overflow:hidden;flex:0 0 auto}
@@ -425,7 +431,40 @@
     body.text-light summary:hover { 
         background-color: rgba(0,0,0,0.05); 
     }
-    .details-content { padding: 0 1rem 1rem 1rem; animation: slideDown 0.3s ease; }
+    
+    /* Smooth Details Animation */
+    details {
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    details[open] {
+        animation: expandDetails 0.3s ease-out;
+    }
+    @keyframes expandDetails {
+        from {
+            opacity: 0.5;
+            max-height: 0;
+        }
+        to {
+            opacity: 1;
+            max-height: 2000px;
+        }
+    }
+    .details-content { 
+        padding: 0 1rem 1rem 1rem; 
+        animation: slideDownSmooth 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes slideDownSmooth {
+        from { 
+            opacity: 0; 
+            transform: translateY(-20px);
+        }
+        to { 
+            opacity: 1; 
+            transform: translateY(0);
+        }
+    }
+    
     .side-menu {
         position: fixed;
         top: 0;
@@ -1043,6 +1082,13 @@
       </svg>
       Meine Liste
     </a>
+    <a href="#" class="menu-link" id="myPlaylistsLink">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 8px;">
+        <path d="M0 12.5a.5.5 0 0 1 .5-.5h1.508c.062-.407.157-.817.27-1.223l-1.028-.586a.5.5 0 0 1-.183-.683l.5-.865a.5.5 0 0 1 .683-.183l1.028.586c.26-.342.554-.66.873-.942l-.586-1.028a.5.5 0 0 1 .183-.683l.865-.5a.5.5 0 0 1 .683.183l.586 1.028c.406-.113.816-.208 1.223-.27V4.492a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1.508c.407.062.817.157 1.223.27l.586-1.028a.5.5 0 0 1 .683-.183l.865.5a.5.5 0 0 1 .183.683l-.586 1.028c.342.26.66.554.942.873l1.028-.586a.5.5 0 0 1 .683.183l.5.865a.5.5 0 0 1-.183.683l-1.028.586c.113.406.208.816.27 1.223h1.508a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1.508c-.062.407-.157.817-.27 1.223l1.028.586a.5.5 0 0 1 .183.683l-.5.865a.5.5 0 0 1-.683.183l-1.028-.586c-.26.342-.554.66-.873.942l.586 1.028a.5.5 0 0 1-.183.683l-.865.5a.5.5 0 0 1-.683-.183l-.586-1.028c-.406.113-.816.208-1.223.27v1.508a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1.508c-.407-.062-.817-.157-1.223-.27l-.586 1.028a.5.5 0 0 1-.683.183l-.865-.5a.5.5 0 0 1-.183-.683l.586-1.028c-.342-.26-.66-.554-.942-.873l-1.028.586a.5.5 0 0 1-.683-.183l-.5-.865a.5.5 0 0 1 .183-.683l1.028-.586c-.113-.406-.208-.816-.27-1.223H.5a.5.5 0 0 1-.5-.5v-1z"/>
+        <path d="M9 11.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM15 4v7H1V4h14z"/>
+      </svg>
+      Meine Playlists
+    </a>
     <a href="#settings" class="menu-link">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 8px;">
         <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
@@ -1174,6 +1220,18 @@
       </div>
 
       <div class="setting-group">
+        <label class="setting-label">Startseiten-Ansicht</label>
+        <div class="toggle-container">
+          <input type="checkbox" id="showOnlyUnwatchedToggle" class="toggle-checkbox">
+          <label for="showOnlyUnwatchedToggle" class="toggle-label">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-text">Nur ungesehene Videos anzeigen</span>
+        </div>
+        <p class="setting-hint">Wenn aktiviert, werden auf der Startseite nur Videos angezeigt, die du noch nicht zu mindestens 90% gesehen hast. Gesehene Videos werden automatisch übersprungen.</p>
+      </div>
+
+      <div class="setting-group">
         <label class="setting-label">Hintergrundbild</label>
         <div class="bg-upload-container">
           <input type="file" id="bgImageInput" accept="image/*" style="display: none;">
@@ -1232,6 +1290,12 @@
       <h2>Meine Liste</h2>
     </div>
     <div class="grid cols-vids" id="mylistViewGrid"></div>
+  </section>
+  <section id="myPlaylistsView" class="section text-page hidden">
+    <div class="page-header">
+      <h2>Meine Playlists</h2>
+    </div>
+    <div class="grid cols-vids" id="myPlaylistsViewGrid"></div>
   </section>
 </main>
 
@@ -1326,6 +1390,7 @@ document.addEventListener('DOMContentLoaded', () => {
         channels: new Map(), 
         videoDetailsCache: new Map(),
         myList: new Map(), // Video-ID -> Video-Object für "Meine Liste"
+        myPlaylists: new Map(), // Playlist-ID -> Playlist-Object für "Meine Playlists"
         current: { 
             channelId: null, tab: 'videos', videosPageToken: null, 
             playlistsPageToken: null, player: null, playerStateInterval: null, searchQuery: null, searchOrder: 'date'
@@ -1334,7 +1399,8 @@ document.addEventListener('DOMContentLoaded', () => {
         theme: 'dark', // 'dark' oder 'light'
         bgImage: null, // Base64 oder URL des Hintergrundbildes
         settings: {
-            minDuration: 120 // in seconds (0 = Alle)
+            minDuration: 120, // in seconds (0 = Alle)
+            showOnlyUnwatchedOnHome: false // Nur ungesehene Videos auf Startseite
         },
         quota: {
             used: 0,
@@ -1376,6 +1442,7 @@ document.addEventListener('DOMContentLoaded', () => {
         continueWatchingVideos: document.getElementById('continueWatchingVideos'),
         continueWatchingLink: document.getElementById('continueWatchingLink'),
         myListLink: document.getElementById('myListLink'),
+        myPlaylistsLink: document.getElementById('myPlaylistsLink'),
         homeBtn: document.getElementById('homeBtn'), 
         refreshBtn: document.getElementById('refreshBtn'), 
         backBtn: document.getElementById('backBtn'),
@@ -1390,14 +1457,17 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsView: document.getElementById('settingsView'),
         continueView: document.getElementById('continueView'),
         mylistView: document.getElementById('mylistView'),
+        myPlaylistsView: document.getElementById('myPlaylistsView'),
         continueViewGrid: document.getElementById('continueViewGrid'),
         mylistViewGrid: document.getElementById('mylistViewGrid'),
+        myPlaylistsViewGrid: document.getElementById('myPlaylistsViewGrid'),
         themeToggleBtn: document.getElementById('themeToggleBtn'),
         durationValue: document.getElementById('durationValue'),
         durationMinusBtn: document.getElementById('durationMinusBtn'),
         quotaProgress: document.getElementById('quotaProgress'),
         quotaPercent: document.getElementById('quotaPercent'),
         durationPlusBtn: document.getElementById('durationPlusBtn'),
+        showOnlyUnwatchedToggle: document.getElementById('showOnlyUnwatchedToggle'),
         bgImageInput: document.getElementById('bgImageInput'),
         bgImageBtn: document.getElementById('bgImageBtn'),
         bgImageRemoveBtn: document.getElementById('bgImageRemoveBtn'),
@@ -1446,6 +1516,11 @@ document.addEventListener('DOMContentLoaded', () => {
             els.durationValue.textContent = `${seconds}s`;
         } else {
             els.durationValue.textContent = 'Alle';
+        }
+        
+        // Apply showOnlyUnwatched toggle
+        if (els.showOnlyUnwatchedToggle) {
+            els.showOnlyUnwatchedToggle.checked = state.settings.showOnlyUnwatchedOnHome || false;
         }
     };
 
@@ -1799,7 +1874,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (input.includes('youtube.com/')) {
             try {
                 console.log('🌐 Versuche Channel-ID & Handle von YouTube-Seite zu extrahieren...');
-                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(input);
+                
+                // WICHTIG: Wenn URL ohne /videos ist, füge /videos hinzu für bessere Erkennung
+                let scrapingUrl = input;
+                if (input.includes('youtube.com/@') && !input.includes('/videos') && !input.includes('/playlists')) {
+                    scrapingUrl = input.replace(/\/$/, '') + '/videos';
+                    console.log('🔧 URL erweitert mit /videos:', scrapingUrl);
+                }
+                
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(scrapingUrl);
                 const response = await fetch(proxyUrl);
                 const html = await response.text();
                 
@@ -2019,7 +2102,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const playlistCard = (p) => {
         const card = document.createElement('div');
         card.className = 'video-card';
-        card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.thumb || ''}" alt="">${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}</div><div class="card-body"><div class="title">${p.title || '?'}</div><div class="meta"><span>Playlist</span></div></div>`;
+        card.dataset.playlistId = p.playlistId;
+        
+        const inMyPlaylists = state.myPlaylists?.has(p.playlistId);
+        
+        card.innerHTML = `
+            <div class="thumb">
+                <img loading="lazy" src="${p.thumb || ''}" alt="">
+                ${p.date ? `<span class="chip">${fmtDate(p.date)}</span>` : ''}
+                <button class="add-to-list-btn ${inMyPlaylists ? 'added' : ''}" title="Zu meinen Playlists hinzufügen">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="title">${p.title || '?'}</div>
+                <div class="meta"><span>Playlist</span></div>
+            </div>`;
+        
+        const addBtn = card.querySelector('.add-to-list-btn');
+        addBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleMyPlaylist(p);
+        };
+        
         card.onclick = () => openPlaylist(p.playlistId, p.title);
         return card;
     };
@@ -2251,6 +2358,82 @@ document.addEventListener('DOMContentLoaded', () => {
             videos.forEach(v => els.mylistViewGrid.appendChild(videoCard(v)));
         } catch (e) {
             els.mylistViewGrid.innerHTML = `<p style="color:var(--muted);padding:2rem;text-align:center;">Fehler: ${e.message}</p>`;
+        }
+    };
+
+    const toggleMyPlaylist = async (playlist) => {
+        if (!state.userId) {
+            showNotification('Bitte melde dich an, um Playlists zu speichern.', 'info');
+            return;
+        }
+        const playlistId = playlist.playlistId;
+        if (state.myPlaylists.has(playlistId)) {
+            // Remove from playlists
+            state.myPlaylists.delete(playlistId);
+            await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists').doc(playlistId).delete();
+            showNotification('Playlist entfernt', 'info');
+        } else {
+            // Add to playlists
+            state.myPlaylists.set(playlistId, playlist);
+            await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists').doc(playlistId).set({
+                playlistId, title: playlist.title, thumb: playlist.thumb, channelTitle: playlist.channelTitle,
+                videoCount: playlist.videoCount, addedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showNotification('Playlist gespeichert ✓', 'success');
+        }
+        // Update UI
+        document.querySelectorAll(`[data-playlist-id="${playlistId}"] .add-to-list-btn`).forEach(btn => {
+            btn.classList.toggle('added', state.myPlaylists.has(playlistId));
+        });
+    };
+
+    const loadMyPlaylists = async () => {
+        if (!state.userId) return;
+        const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists').get();
+        state.myPlaylists.clear();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            state.myPlaylists.set(data.playlistId, data);
+        });
+    };
+
+    const showMyPlaylistsView = async () => {
+        els.myPlaylistsViewGrid.innerHTML = '';
+        showSkeletons(els.myPlaylistsViewGrid, 12, 'playlist');
+        
+        if (!state.userId) {
+            els.myPlaylistsViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Bitte melde dich an.</p>';
+            return;
+        }
+        
+        try {
+            const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists')
+                .orderBy('addedAt', 'desc')
+                .limit(30)
+                .get();
+            
+            els.myPlaylistsViewGrid.innerHTML = '';
+            if (snapshot.empty) {
+                els.myPlaylistsViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Keine gespeicherten Playlists. Füge Playlists mit dem + Button hinzu.</p>';
+                return;
+            }
+            
+            const playlistIds = snapshot.docs.map(d => d.id);
+            
+            // Fetch playlist details from YouTube API
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${playlistIds.join(',')}&key=${YOUTUBE_API_KEY}`);
+            addQuotaCost('playlists', playlistIds.length);
+            const data = await res.json();
+            const playlists = data.items.map(item => ({
+                playlistId: item.id,
+                title: item.snippet.title,
+                thumb: item.snippet.thumbnails?.medium?.url,
+                channelTitle: item.snippet.channelTitle,
+                videoCount: item.contentDetails.itemCount
+            }));
+            playlists.forEach(p => els.myPlaylistsViewGrid.appendChild(playlistCard(p)));
+        } catch (e) {
+            els.myPlaylistsViewGrid.innerHTML = `<p style="color:var(--muted);padding:2rem;text-align:center;">Fehler: ${e.message}</p>`;
         }
     };
 
@@ -2534,16 +2717,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const latestVideoItems = [];
+        const showOnlyUnwatched = state.settings.showOnlyUnwatchedOnHome || false;
+        
         for (const info of successfulChannels) {
             try {
-                const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${info.uploadsId}&maxResults=5&key=${YOUTUBE_API_KEY}`);
+                // Lade mehr Videos wenn "nur ungesehene" aktiv ist (bis zu 15 statt 5)
+                const maxResults = showOnlyUnwatched ? 15 : 5;
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${info.uploadsId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`);
                 addQuotaCost('playlistItems'); // +1 Quota
                 if (res.ok) {
                     const data = await res.json();
                     if(data.items?.length > 0) {
                         const enriched = await enrichVideosWithDuration(data.items, 'snippet');
-                        if (enriched.length > 0) {
-                            latestVideoItems.push({...enriched[0], channelTitle: info.title});
+                        
+                        if (showOnlyUnwatched) {
+                            // Finde das erste nicht-gesehene Video (<90% Fortschritt)
+                            let foundUnwatched = false;
+                            for (const item of enriched) {
+                                const videoId = item.snippet.resourceId.videoId;
+                                const progress = state.progressData.get(videoId);
+                                const percent = progress?.duration > 0 ? (progress.currentTime / progress.duration) * 100 : 0;
+                                
+                                if (percent < 90) {
+                                    latestVideoItems.push({...item, channelTitle: info.title});
+                                    foundUnwatched = true;
+                                    console.log(`✅ Ungesehenes Video von ${info.title}:`, item.snippet.title);
+                                    break;
+                                }
+                            }
+                            if (!foundUnwatched && enriched.length > 0) {
+                                // Fallback: Wenn alle gesehen, nimm das neueste
+                                latestVideoItems.push({...enriched[0], channelTitle: info.title});
+                                console.log(`⚠️ Alle Videos von ${info.title} gesehen, zeige neustes`);
+                            }
+                        } else {
+                            // Standard: Nur neustes Video
+                            if (enriched.length > 0) {
+                                latestVideoItems.push({...enriched[0], channelTitle: info.title});
+                            }
                         }
                     }
                 }
@@ -2574,13 +2785,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return { view: parts[0], id: parts[1], tab: parts[2] };
     };
     const setView = name => {
-        ['homeView', 'channelView', 'privacyView', 'termsView', 'settingsView', 'continueView', 'mylistView'].forEach(viewId => {
+        ['homeView', 'channelView', 'privacyView', 'termsView', 'settingsView', 'continueView', 'mylistView', 'myPlaylistsView'].forEach(viewId => {
             if (els[viewId]) els[viewId].classList.add('hidden');
         });
         if (els[name + 'View']) els[name + 'View'].classList.remove('hidden');
     };
     
     const openPlayer = (videoId, title) => {
+        // Schließe Playlist-Overlay falls offen
+        if (els.playlistOverlay.classList.contains('show')) {
+            closePlaylist();
+        }
+        
         els.playerTitle.textContent = title || 'Video';
         els.overlay.classList.add('show');
         const progress = state.progressData.get(videoId);
@@ -2670,6 +2886,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (r.view === 'mylist') {
                 setView('mylist');
                 await showMyListView();
+            } else if (r.view === 'myplaylists') {
+                setView('myplaylists');
+                await showMyPlaylistsView();
             } else if (r.view === 'channel' && r.id) {
                 setView('channel'); 
                 state.current.channelId = r.id; 
@@ -3088,6 +3307,12 @@ document.addEventListener('DOMContentLoaded', () => {
             els.menuOverlay.classList.add('hidden');
             navigate('mylist'); 
         };
+        els.myPlaylistsLink.onclick = (e) => { 
+            e.preventDefault(); 
+            els.sideMenu.classList.remove('open');
+            els.menuOverlay.classList.add('hidden');
+            navigate('myplaylists'); 
+        };
         els.continueWatchingClose.onclick = closeContinueWatchingOverlay;
         els.continueWatchingOverlay.onclick = (e) => { if (e.target === els.continueWatchingOverlay) closeContinueWatchingOverlay(); };
         els.continueWatchingLink.onclick = (e) => { 
@@ -3108,6 +3333,12 @@ document.addEventListener('DOMContentLoaded', () => {
             state.settings.minDuration = Math.max(0, state.settings.minDuration - 30);
             applySettings();
             saveSettings();
+        };
+        
+        els.showOnlyUnwatchedToggle.onchange = () => {
+            state.settings.showOnlyUnwatchedOnHome = els.showOnlyUnwatchedToggle.checked;
+            saveSettings();
+            console.log('📺 Nur-ungesehene-Videos Einstellung:', state.settings.showOnlyUnwatchedOnHome);
         };
         
         els.bgImageBtn.onclick = () => els.bgImageInput.click();
@@ -3202,6 +3433,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setupProgressListener();
                 loadBgImage();
                 loadMyList();
+                loadMyPlaylists();
                 
                 // WICHTIG: Lade API Quota und Kanal-Config von Firebase
                 await loadQuotaState();
@@ -3216,6 +3448,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (state.progressListenerUnsubscribe) state.progressListenerUnsubscribe();
                 state.progressData.clear();
                 state.myList.clear();
+                state.myPlaylists.clear();
                 updateAllProgressBars();
                 state.bgImage = null;
                 applyBgImage();
