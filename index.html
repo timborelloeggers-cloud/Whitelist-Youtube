@@ -3,7 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>YouTube Whitelist V8.3 (Permissions Fix)</title>
+  <title>YouTube Whitelist - Deine personalisierte Video-Plattform</title>
+  <meta name="description" content="Kuratiere deine eigene YouTube-Erfahrung. Filtere Kanäle, verwalte Playlists und genieße werbefreies Streaming." />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ff0033" />
+  
+  <!-- iOS Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="YT Whitelist" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="apple-touch-startup-image" href="splash-screen.png" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+  
+  <!-- Open Graph / Social Media Preview -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="YouTube Whitelist - Personalisierte Video-Plattform" />
+  <meta property="og:description" content="Kuratiere deine eigene YouTube-Erfahrung mit Kanal-Management, Playlists und intelligenter Filterung." />
+  <meta property="og:image" content="og-image.png" />
+  <meta property="og:url" content="https://deine-domain.de" />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="YouTube Whitelist" />
+  <meta name="twitter:description" content="Deine personalisierte YouTube-Erfahrung" />
+  <meta name="twitter:image" content="og-image.png" />
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -2104,7 +2134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.className = 'video-card';
         card.dataset.playlistId = p.playlistId;
         
-        const inMyPlaylists = state.myPlaylists?.has(p.playlistId);
+        const inMyPlaylists = state.myPlaylists && state.myPlaylists.has(p.playlistId);
         
         card.innerHTML = `
             <div class="thumb">
@@ -2124,6 +2154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const addBtn = card.querySelector('.add-to-list-btn');
         addBtn.onclick = (e) => {
             e.stopPropagation();
+            console.log('🎵 Plus-Button geklickt für Playlist:', p.title);
             toggleMyPlaylist(p);
         };
         
@@ -2362,18 +2393,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const toggleMyPlaylist = async (playlist) => {
+        console.log('🎵 toggleMyPlaylist aufgerufen:', playlist);
         if (!state.userId) {
             showNotification('Bitte melde dich an, um Playlists zu speichern.', 'info');
             return;
         }
         const playlistId = playlist.playlistId;
+        console.log('✅ User ID:', state.userId, 'Playlist ID:', playlistId);
         if (state.myPlaylists.has(playlistId)) {
             // Remove from playlists
+            console.log('➖ Entferne Playlist...');
             state.myPlaylists.delete(playlistId);
             await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists').doc(playlistId).delete();
             showNotification('Playlist entfernt', 'info');
         } else {
             // Add to playlists
+            console.log('➕ Füge Playlist hinzu...');
             state.myPlaylists.set(playlistId, playlist);
             await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists').doc(playlistId).set({
                 playlistId, title: playlist.title, thumb: playlist.thumb, channelTitle: playlist.channelTitle,
@@ -2382,6 +2417,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('Playlist gespeichert ✓', 'success');
         }
         // Update UI
+        console.log('🔄 Aktualisiere UI...');
         document.querySelectorAll(`[data-playlist-id="${playlistId}"] .add-to-list-btn`).forEach(btn => {
             btn.classList.toggle('added', state.myPlaylists.has(playlistId));
         });
@@ -2945,7 +2981,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isVideos) {
                     tabEl.appendChild(videoCard({ videoId: it.snippet.resourceId.videoId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, durationSeconds: it.durationSeconds }));
                 } else {
-                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title }));
+                    tabEl.appendChild(playlistCard({ playlistId: it.id, channelId: state.current.channelId, title: it.snippet.title, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails?.medium?.url, channelTitle: info.title, videoCount: it.contentDetails?.itemCount || 0 }));
                 }
             });
             moreBtn.classList.toggle('hidden', !state.current[pageTokenKey]);
@@ -3012,7 +3048,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: it.snippet.title, 
                         date: it.snippet.publishedAt, 
                         thumb: it.snippet.thumbnails?.medium?.url, 
-                        channelTitle: info.title 
+                        channelTitle: info.title,
+                        videoCount: 0
                     }));
                 });
             }
