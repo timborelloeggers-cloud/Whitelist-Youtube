@@ -2135,6 +2135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.dataset.playlistId = p.playlistId;
         
         const inMyPlaylists = state.myPlaylists && state.myPlaylists.has(p.playlistId);
+        console.log('🎨 Erstelle Playlist-Karte:', p.title, 'In myPlaylists?', inMyPlaylists, 'state.myPlaylists.size:', state.myPlaylists?.size);
         
         card.innerHTML = `
             <div class="thumb">
@@ -2245,10 +2246,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (isCurrentlyMarked) {
             // Entferne die manuelle Markierung - stelle echten Fortschritt wieder her
-            const restoredTime = currentProgress.actualCurrentTime || 0;
-            console.log('↩️ Stelle echten Fortschritt wieder her:', restoredTime);
+            const restoredTime = currentProgress.actualCurrentTime !== undefined ? currentProgress.actualCurrentTime : 0;
+            console.log('↩️ Stelle echten Fortschritt wieder her:', restoredTime, 'von', currentProgress.currentTime);
             
-            await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set({
+            // Verwende update() statt set() um Felder zu löschen
+            await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).update({
                 currentTime: restoredTime,
                 duration: duration || currentProgress.duration || 0,
                 manuallyMarkedAsWatched: false,
@@ -2257,18 +2259,20 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             // Update lokalen State sofort
-            state.progressData.set(videoId, {
+            const newProgress = {
                 currentTime: restoredTime,
                 duration: duration || currentProgress.duration || 0,
                 manuallyMarkedAsWatched: false,
                 lastWatched: new Date()
-            });
+            };
+            state.progressData.set(videoId, newProgress);
+            console.log('💾 Lokaler State aktualisiert:', newProgress);
             
             showNotification('Markierung entfernt - echter Fortschritt wiederhergestellt', 'info');
         } else {
             // Speichere echten Fortschritt, markiere als angesehen
-            const actualTime = currentProgress?.currentTime || 0;
-            console.log('✅ Markiere als angesehen. Backup von echtem Fortschritt:', actualTime);
+            const actualTime = currentProgress?.currentTime !== undefined ? currentProgress.currentTime : 0;
+            console.log('✅ Markiere als angesehen. Backup von echtem Fortschritt:', actualTime, '→ 100%');
             
             await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set({
                 actualCurrentTime: actualTime, // Backup vom echten Fortschritt
@@ -2279,19 +2283,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             // Update lokalen State sofort
-            state.progressData.set(videoId, {
+            const newProgress = {
                 actualCurrentTime: actualTime,
                 currentTime: duration || 0,
                 duration: duration || 0,
                 manuallyMarkedAsWatched: true,
                 lastWatched: new Date()
-            });
+            };
+            state.progressData.set(videoId, newProgress);
+            console.log('💾 Lokaler State aktualisiert:', newProgress);
             
             showNotification('Video als angeschaut markiert ✓', 'success');
         }
         
         // Update UI sofort
+        console.log('🔄 Aktualisiere UI...');
         updateAllProgressBars();
+        console.log('✅ markAsWatched abgeschlossen');
     };
 
     const toggleMyList = async (video) => {
@@ -2560,13 +2568,24 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadMyPlaylists = async () => {
-        if (!state.userId) return;
-        const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists').get();
-        state.myPlaylists.clear();
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            state.myPlaylists.set(data.playlistId, data);
-        });
+        if (!state.userId) {
+            console.log('⚠️ loadMyPlaylists: Kein User');
+            return;
+        }
+        console.log('📥 loadMyPlaylists: Lade Playlists für User:', state.userId);
+        try {
+            const snapshot = await db.collection('users').doc(state.userId).collection('myPlaylists').get();
+            console.log('✅ loadMyPlaylists: Geladen', snapshot.size, 'Playlists');
+            state.myPlaylists.clear();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                console.log('📝 Playlist geladen:', data.playlistId, data.title);
+                state.myPlaylists.set(data.playlistId, data);
+            });
+            console.log('✅ loadMyPlaylists: state.myPlaylists hat jetzt', state.myPlaylists.size, 'Einträge');
+        } catch (e) {
+            console.error('❌ loadMyPlaylists Fehler:', e);
+        }
     };
 
     const showMyPlaylistsView = async () => {
@@ -2582,10 +2601,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             console.log('📥 Lade Playlists von Firebase...');
+            console.log('🔑 User ID:', state.userId);
             // Ohne orderBy - Firebase braucht sonst einen Index
-            const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists')
+            const snapshot = await db.collection('users').doc(state.userId).collection('myPlaylists')
                 .limit(50)
                 .get();
+            console.log('📦 Snapshot:', snapshot);
             
             console.log('✅ Playlists geladen:', snapshot.size);
             els.myPlaylistsViewGrid.innerHTML = '';
