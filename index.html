@@ -2088,7 +2088,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const progress = state.progressData.get(v.videoId);
         let progressPercent = progress?.duration > 0 ? Math.min((progress.currentTime / progress.duration) * 100, 100) : 0;
-        const isWatched = progressPercent >= 90;
+        const isWatched = progressPercent >= 90 || progress?.manuallyMarkedAsWatched === true;
 
         const inMyList = state.myList?.has(v.videoId);
         
@@ -2183,16 +2183,44 @@ document.addEventListener('DOMContentLoaded', () => {
         db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set(data, { merge: true });
     };
     
-    const markAsWatched = (videoId, duration) => {
+    const markAsWatched = async (videoId, duration) => {
         if (!state.userId || !videoId) {
             showNotification('Bitte melde dich an, um Videos als angeschaut zu markieren.', 'info');
             return;
         }
-        // Setze Fortschritt auf 100%
-        saveProgress(videoId, duration, duration);
-        // Update UI sofort
-        updateAllProgressBars();
-        showNotification('Video als angeschaut markiert ✓', 'success');
+        
+        // Hole aktuellen Fortschritt aus Firebase
+        const progressDoc = await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).get();
+        const currentProgress = progressDoc.exists ? progressDoc.data() : { currentTime: 0, duration: duration || 0 };
+        
+        // Toggle: Wenn bereits als angesehen markiert, entferne die Markierung
+        const isCurrentlyMarked = currentProgress.manuallyMarkedAsWatched === true;
+        
+        if (isCurrentlyMarked) {
+            // Entferne die manuelle Markierung - behalte echten Fortschritt
+            await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set({
+                currentTime: currentProgress.actualCurrentTime || currentProgress.currentTime || 0,
+                duration: duration || currentProgress.duration || 0,
+                manuallyMarkedAsWatched: false,
+                lastWatched: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            showNotification('Markierung entfernt - echter Fortschritt wiederhergestellt', 'info');
+        } else {
+            // Speichere echten Fortschritt, aber markiere als angesehen
+            await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set({
+                actualCurrentTime: currentProgress.currentTime || 0, // Speichere echten Fortschritt
+                currentTime: duration || currentProgress.duration || 0, // Zeige als 100%
+                duration: duration || currentProgress.duration || 0,
+                manuallyMarkedAsWatched: true,
+                lastWatched: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            showNotification('Video als angeschaut markiert ✓', 'success');
+        }
+        
+        // Lade Progress neu und update UI
+        setTimeout(() => {
+            updateAllProgressBars();
+        }, 200);
     };
 
     const toggleMyList = async (video) => {
@@ -2302,33 +2330,44 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const showContinueWatchingView = async () => {
+        console.log('▶️ showContinueWatchingView aufgerufen');
         els.continueViewGrid.innerHTML = '';
         showSkeletons(els.continueViewGrid, 12, 'video');
         
         if (!state.userId) {
+            console.log('❌ Kein User angemeldet');
             els.continueViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Bitte melde dich an.</p>';
             return;
         }
         
         try {
+            console.log('📥 Lade Fortschritte von Firebase...');
             const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('videoProgress')
                 .where('currentTime', '>', 0)
                 .orderBy('currentTime', 'desc')
-                .limit(30)
+                .limit(50)
                 .get();
             
+            console.log('✅ Fortschritte geladen:', snapshot.size);
             els.continueViewGrid.innerHTML = '';
             if (snapshot.empty) {
+                console.log('📭 Keine Fortschritte gefunden');
                 els.continueViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Keine angefangenen Videos.</p>';
                 return;
             }
             
             const videoIds = snapshot.docs.map(d => d.id).filter(id => {
                 const progress = state.progressData.get(id);
-                return progress && progress.duration > 0 && (progress.currentTime / progress.duration) < 0.9;
+                const percent = progress && progress.duration > 0 ? (progress.currentTime / progress.duration) : 0;
+                const isManuallyMarked = progress?.manuallyMarkedAsWatched === true;
+                // Zeige nur Videos mit 1-89% Fortschritt UND nicht manuell als angesehen markiert
+                return progress && progress.duration > 0 && percent > 0.01 && percent < 0.9 && !isManuallyMarked;
             });
             
+            console.log('🎬 Gefilterte Video IDs:', videoIds.length, 'von', snapshot.size);
+            
             if (videoIds.length === 0) {
+                console.log('📭 Keine angefangenen Videos nach Filter');
                 els.continueViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Keine angefangenen Videos.</p>';
                 return;
             }
@@ -2345,8 +2384,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 durationSeconds: parseISO8601Duration(item.contentDetails.duration),
                 date: item.snippet.publishedAt
             }));
+            console.log('📺 Rendere', videos.length, 'Videos');
             videos.forEach(v => els.continueViewGrid.appendChild(videoCard(v)));
         } catch (e) {
+            console.error('❌ Fehler beim Laden von Continue Watching:', e);
+            console.error('Fehler Details:', e.message, e.stack);
             els.continueViewGrid.innerHTML = `<p style="color:var(--muted);padding:2rem;text-align:center;">Fehler: ${e.message}</p>`;
         }
     };
@@ -2434,32 +2476,39 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const showMyPlaylistsView = async () => {
+        console.log('📺 showMyPlaylistsView aufgerufen');
         els.myPlaylistsViewGrid.innerHTML = '';
         showSkeletons(els.myPlaylistsViewGrid, 12, 'playlist');
         
         if (!state.userId) {
+            console.log('❌ Kein User angemeldet');
             els.myPlaylistsViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Bitte melde dich an.</p>';
             return;
         }
         
         try {
+            console.log('📥 Lade Playlists von Firebase...');
             const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists')
                 .orderBy('addedAt', 'desc')
                 .limit(30)
                 .get();
             
+            console.log('✅ Playlists geladen:', snapshot.size);
             els.myPlaylistsViewGrid.innerHTML = '';
             if (snapshot.empty) {
+                console.log('📭 Keine Playlists gefunden');
                 els.myPlaylistsViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Keine gespeicherten Playlists. Füge Playlists mit dem + Button hinzu.</p>';
                 return;
             }
             
             const playlistIds = snapshot.docs.map(d => d.id);
+            console.log('🎬 Playlist IDs:', playlistIds);
             
             // Fetch playlist details from YouTube API
             const res = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${playlistIds.join(',')}&key=${YOUTUBE_API_KEY}`);
             addQuotaCost('playlists', playlistIds.length);
             const data = await res.json();
+            console.log('✅ YouTube API Response:', data);
             const playlists = data.items.map(item => ({
                 playlistId: item.id,
                 title: item.snippet.title,
@@ -2467,8 +2516,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 channelTitle: item.snippet.channelTitle,
                 videoCount: item.contentDetails.itemCount
             }));
+            console.log('📺 Rendere', playlists.length, 'Playlists');
             playlists.forEach(p => els.myPlaylistsViewGrid.appendChild(playlistCard(p)));
         } catch (e) {
+            console.error('❌ Fehler beim Laden von Playlists:', e);
+            console.error('Fehler Details:', e.message, e.stack);
             els.myPlaylistsViewGrid.innerHTML = `<p style="color:var(--muted);padding:2rem;text-align:center;">Fehler: ${e.message}</p>`;
         }
     };
