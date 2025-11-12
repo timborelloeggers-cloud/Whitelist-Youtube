@@ -2632,7 +2632,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 videoCount: item.contentDetails.itemCount
             }));
             console.log('📺 Rendere', playlists.length, 'Playlists');
-            playlists.forEach(p => els.myPlaylistsViewGrid.appendChild(playlistCard(p)));
+            playlists.forEach(p => {
+                const card = playlistCard(p);
+                console.log('➕ Füge Playlist-Karte hinzu:', p.title, card);
+                els.myPlaylistsViewGrid.appendChild(card);
+            });
+            console.log('✅ Grid-Inhalt:', els.myPlaylistsViewGrid.children.length, 'Karten');
+            console.log('📦 Grid Element:', els.myPlaylistsViewGrid);
         } catch (e) {
             console.error('❌ Fehler beim Laden von Playlists:', e);
             console.error('Fehler Details:', e.message, e.stack);
@@ -2988,10 +2994,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return { view: parts[0], id: parts[1], tab: parts[2] };
     };
     const setView = name => {
+        console.log('🖼️ setView aufgerufen:', name);
         ['homeView', 'channelView', 'privacyView', 'termsView', 'settingsView', 'continueView', 'mylistView', 'myPlaylistsView'].forEach(viewId => {
             if (els[viewId]) els[viewId].classList.add('hidden');
         });
-        if (els[name + 'View']) els[name + 'View'].classList.remove('hidden');
+        const targetView = els[name + 'View'];
+        console.log('🎯 Target View:', name + 'View', targetView ? 'gefunden' : 'NICHT GEFUNDEN');
+        if (targetView) {
+            targetView.classList.remove('hidden');
+            console.log('✅ View', name + 'View', 'ist jetzt sichtbar');
+        } else {
+            console.error('❌ View', name + 'View', 'existiert nicht in els!');
+        }
     };
     
     const openPlayer = (videoId, title) => {
@@ -3512,9 +3526,11 @@ document.addEventListener('DOMContentLoaded', () => {
             navigate('mylist'); 
         };
         els.myPlaylistsLink.onclick = (e) => { 
+            console.log('🔗 Meine Playlists Link geklickt');
             e.preventDefault(); 
             els.sideMenu.classList.remove('open');
             els.menuOverlay.classList.add('hidden');
+            console.log('🚀 Navigate zu myplaylists');
             navigate('myplaylists'); 
         };
         els.continueWatchingClose.onclick = closeContinueWatchingOverlay;
