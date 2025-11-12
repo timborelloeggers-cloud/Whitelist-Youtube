@@ -2189,38 +2189,66 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        console.log('🎯 markAsWatched aufgerufen für:', videoId);
+        
         // Hole aktuellen Fortschritt aus Firebase
         const progressDoc = await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).get();
-        const currentProgress = progressDoc.exists ? progressDoc.data() : { currentTime: 0, duration: duration || 0 };
+        const currentProgress = progressDoc.exists ? progressDoc.data() : null;
+        
+        console.log('📊 Aktueller Fortschritt:', currentProgress);
         
         // Toggle: Wenn bereits als angesehen markiert, entferne die Markierung
-        const isCurrentlyMarked = currentProgress.manuallyMarkedAsWatched === true;
+        const isCurrentlyMarked = currentProgress?.manuallyMarkedAsWatched === true;
         
         if (isCurrentlyMarked) {
-            // Entferne die manuelle Markierung - behalte echten Fortschritt
+            // Entferne die manuelle Markierung - stelle echten Fortschritt wieder her
+            const restoredTime = currentProgress.actualCurrentTime || 0;
+            console.log('↩️ Stelle echten Fortschritt wieder her:', restoredTime);
+            
             await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set({
-                currentTime: currentProgress.actualCurrentTime || currentProgress.currentTime || 0,
+                currentTime: restoredTime,
                 duration: duration || currentProgress.duration || 0,
                 manuallyMarkedAsWatched: false,
+                actualCurrentTime: firebase.firestore.FieldValue.delete(), // Lösche Backup
                 lastWatched: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            });
+            
+            // Update lokalen State sofort
+            state.progressData.set(videoId, {
+                currentTime: restoredTime,
+                duration: duration || currentProgress.duration || 0,
+                manuallyMarkedAsWatched: false,
+                lastWatched: new Date()
+            });
+            
             showNotification('Markierung entfernt - echter Fortschritt wiederhergestellt', 'info');
         } else {
-            // Speichere echten Fortschritt, aber markiere als angesehen
+            // Speichere echten Fortschritt, markiere als angesehen
+            const actualTime = currentProgress?.currentTime || 0;
+            console.log('✅ Markiere als angesehen. Backup von echtem Fortschritt:', actualTime);
+            
             await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set({
-                actualCurrentTime: currentProgress.currentTime || 0, // Speichere echten Fortschritt
-                currentTime: duration || currentProgress.duration || 0, // Zeige als 100%
-                duration: duration || currentProgress.duration || 0,
+                actualCurrentTime: actualTime, // Backup vom echten Fortschritt
+                currentTime: duration || 0, // Zeige als 100%
+                duration: duration || 0,
                 manuallyMarkedAsWatched: true,
                 lastWatched: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            });
+            
+            // Update lokalen State sofort
+            state.progressData.set(videoId, {
+                actualCurrentTime: actualTime,
+                currentTime: duration || 0,
+                duration: duration || 0,
+                manuallyMarkedAsWatched: true,
+                lastWatched: new Date()
+            });
+            
             showNotification('Video als angeschaut markiert ✓', 'success');
         }
         
-        // Lade Progress neu und update UI
-        setTimeout(() => {
-            updateAllProgressBars();
-        }, 200);
+        // Update UI sofort
+        updateAllProgressBars();
     };
 
     const toggleMyList = async (video) => {
@@ -2287,8 +2315,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         firebase.firestore().collection('users').doc(state.userId).collection('videoProgress')
             .where('currentTime', '>', 0)
-            .orderBy('currentTime', 'desc')
-            .limit(20)
+            .limit(50)
             .get()
             .then(async snapshot => {
                 els.continueWatchingVideos.innerHTML = '';
@@ -2344,8 +2371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('📥 Lade Fortschritte von Firebase...');
             const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('videoProgress')
                 .where('currentTime', '>', 0)
-                .orderBy('currentTime', 'desc')
-                .limit(50)
+                .limit(100)
                 .get();
             
             console.log('✅ Fortschritte geladen:', snapshot.size);
@@ -2404,8 +2430,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('myList')
-                .orderBy('addedAt', 'desc')
-                .limit(30)
+                .limit(50)
                 .get();
             
             els.mylistViewGrid.innerHTML = '';
@@ -2488,9 +2513,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             console.log('📥 Lade Playlists von Firebase...');
+            // Ohne orderBy - Firebase braucht sonst einen Index
             const snapshot = await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists')
-                .orderBy('addedAt', 'desc')
-                .limit(30)
+                .limit(50)
                 .get();
             
             console.log('✅ Playlists geladen:', snapshot.size);
@@ -3592,3 +3617,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
