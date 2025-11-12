@@ -2152,11 +2152,17 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         
         const addBtn = card.querySelector('.add-to-list-btn');
-        addBtn.onclick = (e) => {
-            e.stopPropagation();
-            console.log('🎵 Plus-Button geklickt für Playlist:', p.title);
-            toggleMyPlaylist(p);
-        };
+        if (!addBtn) {
+            console.error('❌ Plus-Button nicht gefunden für Playlist:', p.title);
+        } else {
+            console.log('✅ Plus-Button gefunden für Playlist:', p.title);
+            addBtn.onclick = (e) => {
+                e.stopPropagation();
+                console.log('🎵 Plus-Button geklickt für Playlist:', p.title);
+                console.log('📦 Playlist Object:', p);
+                toggleMyPlaylist(p);
+            };
+        }
         
         card.onclick = () => openPlaylist(p.playlistId, p.title);
         return card;
@@ -2169,18 +2175,55 @@ document.addEventListener('DOMContentLoaded', () => {
             const progressPercent = progress?.duration > 0 ? Math.min((progress.currentTime / progress.duration) * 100, 100) : 0;
             const bar = card.querySelector('.progress-bar');
             if (bar) bar.style.width = `${progressPercent}%`;
+            
+            // Update "Als angesehen" Button State
+            const markBtn = card.querySelector('.mark-watched-btn');
+            if (markBtn) {
+                const isWatched = progressPercent >= 90 || progress?.manuallyMarkedAsWatched === true;
+                markBtn.classList.toggle('watched', isWatched);
+            }
         });
     };
 
     // ===== DATA FETCHING & DATABASE =====
-    const saveProgress = (videoId, currentTime, duration) => {
+    const saveProgress = async (videoId, currentTime, duration) => {
         if (!state.userId || !videoId || !isFinite(currentTime) || !isFinite(duration)) return;
-        const data = { 
-            currentTime: Math.round(currentTime), 
-            duration: Math.round(duration), 
-            lastWatched: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set(data, { merge: true });
+        
+        // Prüfe ob Video manuell als angesehen markiert ist
+        const progress = state.progressData.get(videoId);
+        if (progress?.manuallyMarkedAsWatched === true) {
+            // Video ist manuell markiert - speichere nur actualCurrentTime
+            console.log('📝 Video ist manuell markiert, speichere nur echten Fortschritt');
+            const data = {
+                actualCurrentTime: Math.round(currentTime),
+                duration: Math.round(duration),
+                lastWatched: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set(data, { merge: true });
+            
+            // Update lokalen State
+            state.progressData.set(videoId, {
+                ...progress,
+                actualCurrentTime: Math.round(currentTime),
+                duration: Math.round(duration),
+                lastWatched: new Date()
+            });
+        } else {
+            // Normaler Fortschritt
+            const data = { 
+                currentTime: Math.round(currentTime), 
+                duration: Math.round(duration), 
+                lastWatched: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection('users').doc(state.userId).collection('videoProgress').doc(videoId).set(data, { merge: true });
+            
+            // Update lokalen State
+            state.progressData.set(videoId, {
+                currentTime: Math.round(currentTime),
+                duration: Math.round(duration),
+                lastWatched: new Date()
+            });
+        }
     };
     
     const markAsWatched = async (videoId, duration) => {
@@ -2461,33 +2504,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toggleMyPlaylist = async (playlist) => {
         console.log('🎵 toggleMyPlaylist aufgerufen:', playlist);
+        console.log('📊 state.myPlaylists:', state.myPlaylists);
+        console.log('👤 state.userId:', state.userId);
+        
         if (!state.userId) {
+            console.log('❌ Kein User angemeldet!');
             showNotification('Bitte melde dich an, um Playlists zu speichern.', 'info');
             return;
         }
+        
         const playlistId = playlist.playlistId;
         console.log('✅ User ID:', state.userId, 'Playlist ID:', playlistId);
-        if (state.myPlaylists.has(playlistId)) {
-            // Remove from playlists
-            console.log('➖ Entferne Playlist...');
-            state.myPlaylists.delete(playlistId);
-            await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists').doc(playlistId).delete();
-            showNotification('Playlist entfernt', 'info');
-        } else {
-            // Add to playlists
-            console.log('➕ Füge Playlist hinzu...');
-            state.myPlaylists.set(playlistId, playlist);
-            await firebase.firestore().collection('users').doc(state.userId).collection('myPlaylists').doc(playlistId).set({
-                playlistId, title: playlist.title, thumb: playlist.thumb, channelTitle: playlist.channelTitle,
-                videoCount: playlist.videoCount, addedAt: firebase.firestore.FieldValue.serverTimestamp()
+        
+        try {
+            if (state.myPlaylists.has(playlistId)) {
+                // Remove from playlists
+                console.log('➖ Entferne Playlist...');
+                state.myPlaylists.delete(playlistId);
+                await db.collection('users').doc(state.userId).collection('myPlaylists').doc(playlistId).delete();
+                console.log('✅ Playlist aus Firebase gelöscht');
+                showNotification('Playlist entfernt', 'info');
+            } else {
+                // Add to playlists
+                console.log('➕ Füge Playlist hinzu...');
+                const playlistData = {
+                    playlistId, 
+                    title: playlist.title, 
+                    thumb: playlist.thumb, 
+                    channelTitle: playlist.channelTitle,
+                    videoCount: playlist.videoCount || 0, 
+                    addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                console.log('📦 Playlist Data:', playlistData);
+                
+                state.myPlaylists.set(playlistId, playlist);
+                console.log('💾 Speichere in Firebase...');
+                await db.collection('users').doc(state.userId).collection('myPlaylists').doc(playlistId).set(playlistData);
+                console.log('✅ Playlist in Firebase gespeichert!');
+                showNotification('Playlist gespeichert ✓', 'success');
+            }
+            
+            // Update UI
+            console.log('🔄 Aktualisiere UI...');
+            document.querySelectorAll(`[data-playlist-id="${playlistId}"] .add-to-list-btn`).forEach(btn => {
+                const shouldBeAdded = state.myPlaylists.has(playlistId);
+                console.log('🎨 Button Update:', btn, 'added?', shouldBeAdded);
+                btn.classList.toggle('added', shouldBeAdded);
             });
-            showNotification('Playlist gespeichert ✓', 'success');
+            console.log('✅ toggleMyPlaylist abgeschlossen');
+        } catch (error) {
+            console.error('❌ Fehler in toggleMyPlaylist:', error);
+            console.error('Error Details:', error.message, error.stack);
+            showNotification('Fehler beim Speichern: ' + error.message, 'error');
         }
-        // Update UI
-        console.log('🔄 Aktualisiere UI...');
-        document.querySelectorAll(`[data-playlist-id="${playlistId}"] .add-to-list-btn`).forEach(btn => {
-            btn.classList.toggle('added', state.myPlaylists.has(playlistId));
-        });
     };
 
     const loadMyPlaylists = async () => {
@@ -3617,4 +3686,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
