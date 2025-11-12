@@ -414,7 +414,7 @@
     }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .sort-options .btn { padding: 8px 14px; font-size: 0.85rem; transition: all 0.2s ease; }
-    .overlay { position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:200; animation: fadeIn 0.2s ease; }
+    .overlay { position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:300; animation: fadeIn 0.2s ease; } /* z-index 300 damit Player ÜBER Playlist (z-index 200) liegt */
     .overlay.show{display:flex}
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .modal{
@@ -960,101 +960,155 @@
         top: 80px;
         left: 50%;
         transform: translateX(-50%);
-        max-width: 500px;
+        max-width: 450px;
         width: 90%;
-        padding: 16px 24px;
-        background: rgba(15,15,15,0.85);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255,255,255,0.15);
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        padding: 14px 20px;
+        background: rgba(15,15,15,0.95);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 16px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);
         color: var(--text);
         font-size: 0.95rem;
+        font-weight: 500;
         z-index: 10000;
         display: flex;
         align-items: center;
-        gap: 12px;
-        animation: slideDown 0.3s ease;
-        transition: all 0.3s ease;
+        gap: 14px;
+        animation: slideDownBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     #statusBox::before {
         content: '';
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         flex-shrink: 0;
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     /* Loading State */
+    #statusBox.loading {
+        background: rgba(15,15,15,0.95);
+        border-color: rgba(147,197,253,0.4);
+    }
     #statusBox.loading::before {
         content: '⏳';
-        font-size: 20px;
+        font-size: 22px;
         animation: pulse 1.5s ease-in-out infinite;
     }
     
     /* Success State */
     #statusBox.success {
-        background: rgba(16,185,129,0.2);
-        border-color: rgba(16,185,129,0.4);
+        background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.25));
+        border-color: rgba(16,185,129,0.6);
+        box-shadow: 0 12px 40px rgba(16,185,129,0.3), 0 4px 12px rgba(0,0,0,0.3);
     }
     #statusBox.success::before {
         content: '✓';
-        font-size: 20px;
+        font-size: 24px;
         color: #10b981;
         font-weight: bold;
+        text-shadow: 0 2px 8px rgba(16,185,129,0.5);
+        animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     
     /* Error State */
     #statusBox.error {
-        background: rgba(239,68,68,0.2);
-        border-color: rgba(239,68,68,0.4);
+        background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(220,38,38,0.25));
+        border-color: rgba(239,68,68,0.6);
+        box-shadow: 0 12px 40px rgba(239,68,68,0.3), 0 4px 12px rgba(0,0,0,0.3);
     }
     #statusBox.error::before {
         content: '✕';
-        font-size: 20px;
+        font-size: 24px;
         color: #ef4444;
         font-weight: bold;
+        text-shadow: 0 2px 8px rgba(239,68,68,0.5);
+        animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     
     /* Info State */
     #statusBox.info {
-        background: rgba(59,130,246,0.2);
-        border-color: rgba(59,130,246,0.4);
+        background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.25));
+        border-color: rgba(59,130,246,0.6);
+        box-shadow: 0 12px 40px rgba(59,130,246,0.3), 0 4px 12px rgba(0,0,0,0.3);
     }
     #statusBox.info::before {
         content: 'ℹ';
-        font-size: 20px;
+        font-size: 24px;
         color: #3b82f6;
         font-weight: bold;
+        text-shadow: 0 2px 8px rgba(59,130,246,0.5);
+        animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     
     /* Light Mode */
     body.text-light #statusBox {
-        background: rgba(255,255,255,0.85);
-        border-color: rgba(0,0,0,0.15);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        background: rgba(255,255,255,0.95);
+        border-color: rgba(0,0,0,0.2);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
+    }
+    body.text-light #statusBox.loading {
+        background: rgba(255,255,255,0.95);
+        border-color: rgba(59,130,246,0.4);
     }
     body.text-light #statusBox.success {
-        background: rgba(16,185,129,0.15);
-        border-color: rgba(16,185,129,0.3);
+        background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.15));
+        border-color: rgba(16,185,129,0.5);
+        box-shadow: 0 12px 40px rgba(16,185,129,0.25), 0 4px 12px rgba(0,0,0,0.15);
     }
     body.text-light #statusBox.error {
-        background: rgba(239,68,68,0.15);
-        border-color: rgba(239,68,68,0.3);
+        background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(220,38,38,0.15));
+        border-color: rgba(239,68,68,0.5);
+        box-shadow: 0 12px 40px rgba(239,68,68,0.25), 0 4px 12px rgba(0,0,0,0.15);
     }
     body.text-light #statusBox.info {
-        background: rgba(59,130,246,0.15);
-        border-color: rgba(59,130,246,0.3);
+        background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.15));
+        border-color: rgba(59,130,246,0.5);
+        box-shadow: 0 12px 40px rgba(59,130,246,0.25), 0 4px 12px rgba(0,0,0,0.15);
     }
     
     /* Hidden State */
     #statusBox.hidden {
         opacity: 0;
-        transform: translateX(-50%) translateY(-20px);
+        transform: translateX(-50%) translateY(-30px);
         pointer-events: none;
+    }
+    
+    /* Animations */
+    @keyframes slideDownBounce {
+        0% { 
+            opacity: 0; 
+            transform: translateX(-50%) translateY(-40px) scale(0.9);
+        }
+        60% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(5px) scale(1.02);
+        }
+        100% { 
+            opacity: 1; 
+            transform: translateX(-50%) translateY(0) scale(1);
+        }
+    }
+    
+    @keyframes scaleIn {
+        0% { 
+            transform: scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.2);
+        }
+        100% { 
+            transform: scale(1);
+            opacity: 1;
+        }
     }
     
     @keyframes slideDown {
@@ -1196,43 +1250,237 @@
     <h2>Datenschutzerklärung</h2>
     <div class="text-content">
       <h3>1. Allgemeines</h3>
-      <p>Diese Datenschutzerklärung erläutert, wie YouTube Whitelist deine persönlichen Daten erhebt, nutzt und schützt.</p>
+      <p>Diese Datenschutzerklärung erläutert, wie YouTube Whitelist ("wir", "uns", "diese App") deine persönlichen Daten erhebt, nutzt und schützt.</p>
       
-      <h3>2. Daten die wir erheben</h3>
+      <h3>2. Nutzung von YouTube API Services</h3>
+      <p><strong>Diese App nutzt YouTube API Services.</strong> Durch die Nutzung dieser App stimmst du zu, dass Daten über die YouTube API abgerufen und verarbeitet werden.</p>
+      <p>Die Verarbeitung deiner Daten durch Google unterliegt der <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Datenschutzerklärung</a>.</p>
+      
+      <h3>3. Welche Daten wir erheben und verwenden</h3>
+      <p><strong>Über YouTube API Services:</strong></p>
       <ul>
-        <li><strong>Google-Kontodaten:</strong> Name, E-Mail, Profilfoto (über Firebase Authentication)</li>
-        <li><strong>Video-Fortschritt:</strong> Welche Videos du schaust, wie weit du fortgeschritten bist</li>
-        <li><strong>Einstellungen:</strong> Deine Farbpräferenzen, Hintergrundbilder, Text-Modus-Einstellungen</li>
-        <li><strong>Favoriten:</strong> Deine ausgewählten Kanäle und deren Einstellungen</li>
+        <li><strong>Kanal-Informationen:</strong> Titel, Thumbnails, Banner, Video-IDs von konfigurierten YouTube-Kanälen</li>
+        <li><strong>Video-Metadaten:</strong> Titel, Beschreibungen, Veröffentlichungsdaten, Videodauern, Thumbnails</li>
+        <li><strong>Playlist-Daten:</strong> Playlist-Titel, Videoanzahl, Playlist-Items</li>
+        <li><strong>KEINE persönlichen YouTube-Nutzerdaten:</strong> Wir greifen NICHT auf dein YouTube-Konto, deine Abos, Likes oder Kommentare zu</li>
       </ul>
       
-      <h3>3. Speicherung der Daten</h3>
-      <p>Deine Daten werden in Google Firebase gespeichert und mit deinem Google-Konto synchronisiert. Hintergrundbild-Dateien werden als Base64 in Firebase gespeichert.</p>
+      <p><strong>Über Firebase Authentication (Google-Anmeldung):</strong></p>
+      <ul>
+        <li><strong>Authentifizierung:</strong> Google User ID (eindeutige Kennung)</li>
+        <li><strong>Profil-Daten:</strong> Name, E-Mail-Adresse, Profilfoto (öffentlich von deinem Google-Konto)</li>
+      </ul>
       
-      <h3>4. Externe APIs</h3>
-      <p>Wir nutzen die YouTube Data API v3 zur Abfrage von Kanal- und Video-Informationen. Dies geschieht nur auf deinen Wunsch hin (via Klick auf den Aktualisierungs-Button).</p>
+      <p><strong>Von dir erstellte Daten:</strong></p>
+      <ul>
+        <li><strong>Video-Fortschritt:</strong> Welche Videos du anschaust, wie weit du gekommen bist (gespeichert zur Fortsetzung der Wiedergabe)</li>
+        <li><strong>Persönliche Listen:</strong> Gespeicherte Videos, Playlists und Kanäle, die du als Favoriten markiert hast</li>
+        <li><strong>Einstellungen:</strong> Theme-Präferenzen (Dark/Light Mode), Video-Längen-Filter, Hintergrundbild</li>
+        <li><strong>Video-Markierungen:</strong> Manuell als "angesehen" markierte Videos</li>
+      </ul>
       
-      <h3>5. Deine Rechte</h3>
-      <p>Du kannst jederzeit alle deine Daten einsehen, ändern oder löschen, indem du dein Google-Konto verwaltest oder diese App verlässt.</p>
+      <h3>4. Wie wir deine Daten verwenden und verarbeiten</h3>
+      <p><strong>Interne Verwendung:</strong></p>
+      <ul>
+        <li>Personalisierung deiner Ansichten und Video-Empfehlungen</li>
+        <li>Speicherung deines Video-Fortschritts zur Fortsetzung der Wiedergabe</li>
+        <li>Synchronisation deiner Einstellungen über mehrere Geräte hinweg</li>
+        <li>Caching von YouTube-Daten zur Reduzierung von API-Anfragen und Verbesserung der Performance</li>
+      </ul>
+      
+      <p><strong>Weitergabe an Dritte:</strong></p>
+      <ul>
+        <li><strong>Google Firebase:</strong> Alle deine Daten werden in Google Firebase (Cloud Firestore und Firebase Authentication) gespeichert</li>
+        <li><strong>YouTube API:</strong> Anfragen an YouTube API Services zur Abfrage öffentlicher Kanal- und Videoinformationen</li>
+        <li><strong>KEINE andere Weitergabe:</strong> Wir teilen deine Daten mit KEINEN anderen Dritten, Werbenetzwerken oder Analyse-Diensten</li>
+      </ul>
+      
+      <h3>5. Speicherung, Zugriff und Erfassung auf Geräten</h3>
+      <p><strong>Diese App speichert, greift zu und erfasst Informationen direkt oder indirekt auf oder von deinem Gerät:</strong></p>
+      
+      <p><strong>Browser Local Storage:</strong></p>
+      <ul>
+        <li>Theme-Einstellung (Dark/Light Mode)</li>
+        <li>Video-Längen-Filter-Einstellungen</li>
+        <li>Startseiten-Ansichts-Präferenzen</li>
+      </ul>
+      
+      <p><strong>Browser Session Storage:</strong></p>
+      <ul>
+        <li>Temporäre Zwischenspeicherung von YouTube API Daten während der Session</li>
+      </ul>
+      
+      <p><strong>Cookies und ähnliche Technologien:</strong></p>
+      <ul>
+        <li><strong>Firebase Authentication Cookies:</strong> Zur Aufrechterhaltung deiner Anmeldesitzung</li>
+        <li><strong>Keine Tracking-Cookies:</strong> Wir verwenden KEINE Cookies zu Werbe-, Tracking- oder Analyse-Zwecken</li>
+        <li><strong>Keine Third-Party Cookies:</strong> Es werden keine Cookies von Drittanbietern gesetzt (außer Google Firebase/YouTube für deren Services)</li>
+      </ul>
+      
+      <p><strong>Kein Zugriff durch Dritte:</strong> Nur diese App und die genutzten Google-Dienste (Firebase, YouTube API) haben Zugriff auf die gespeicherten Daten. Es gibt KEINE anderen Dritten, die Daten sammeln oder darauf zugreifen können.</p>
+      
+      <h3>6. Datenspeicherung und -sicherheit</h3>
+      <ul>
+        <li><strong>Cloud-Speicherung:</strong> Deine persönlichen Daten werden in Google Firebase Cloud Firestore gespeichert</li>
+        <li><strong>Verschlüsselung:</strong> Alle Daten werden verschlüsselt übertragen (HTTPS/TLS)</li>
+        <li><strong>Zugriffskontrolle:</strong> Nur du kannst über dein Google-Konto auf deine Daten zugreifen</li>
+        <li><strong>Hintergrundbild:</strong> Wird als Base64-kodiertes Bild in Firebase gespeichert (max. 800KB nach Komprimierung)</li>
+      </ul>
+      
+      <h3>7. Deine Rechte (DSGVO)</h3>
+      <ul>
+        <li><strong>Auskunftsrecht:</strong> Du kannst jederzeit Auskunft über deine gespeicherten Daten erhalten</li>
+        <li><strong>Berichtigungsrecht:</strong> Du kannst deine Daten jederzeit ändern oder aktualisieren</li>
+        <li><strong>Löschungsrecht:</strong> Du kannst deine Daten jederzeit löschen, indem du dich abmeldest und dein Firebase-Konto löschst</li>
+        <li><strong>Widerspruchsrecht:</strong> Du kannst der Nutzung deiner Daten jederzeit widersprechen</li>
+        <li><strong>Datenportabilität:</strong> Firebase bietet Export-Funktionen für deine Daten</li>
+      </ul>
+      
+      <h3>8. Datenlöschung</h3>
+      <p>Um alle deine Daten zu löschen:</p>
+      <ol>
+        <li>Klicke auf "Abmelden" in der App</li>
+        <li>Deine lokal gespeicherten Einstellungen (localStorage) bleiben auf deinem Gerät, bis du den Browser-Cache leerst</li>
+        <li>Deine Firebase-Daten bleiben bestehen, außer du löschst dein Google-Konto oder kontaktierst uns zur vollständigen Löschung</li>
+      </ol>
+      
+      <h3>9. Minderjährige</h3>
+      <p>Diese App richtet sich an Personen ab 13 Jahren. Wir erfassen wissentlich keine Daten von Kindern unter 13 Jahren. Die Nutzung von YouTube unterliegt den <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube Nutzungsbedingungen</a>, die ein Mindestalter vorschreiben.</p>
+      
+      <h3>10. Änderungen dieser Datenschutzerklärung</h3>
+      <p>Wir behalten uns vor, diese Datenschutzerklärung jederzeit zu ändern. Änderungen werden auf dieser Seite veröffentlicht. Die fortgesetzte Nutzung der App nach Änderungen bedeutet deine Zustimmung zu den aktualisierten Bedingungen.</p>
+      
+      <h3>11. Kontakt</h3>
+      <p>Bei Fragen zum Datenschutz oder zur Ausübung deiner Rechte kontaktiere uns bitte:</p>
+      <p><strong>E-Mail:</strong> <a href="mailto:timbohartmann2005@gmail.com">timbohartmann2005@gmail.com</a></p>
+      <p><strong>Verantwortlicher:</strong> Timbo Hartmann</p>
+      
+      <p style="margin-top: 2rem; font-size: 0.9rem; color: var(--muted);">
+        <strong>Letzte Aktualisierung:</strong> 12. November 2025
+      </p>
     </div>
   </section>
   <section id="termsView" class="section text-page hidden">
-    <h2>Nutzungsbedingungen</h2>
+    <h2>Nutzungsbedingungen (Terms of Use)</h2>
     <div class="text-content">
       <h3>1. Akzeptanz der Bedingungen</h3>
-      <p>Mit der Nutzung dieser App akzeptierst du diese Nutzungsbedingungen.</p>
+      <p>Durch die Nutzung von YouTube Whitelist ("diese App", "der Dienst") stimmst du den folgenden Nutzungsbedingungen zu. Wenn du mit diesen Bedingungen nicht einverstanden bist, darfst du diese App nicht nutzen.</p>
       
-      <h3>2. YouTube API Nutzung</h3>
-      <p>Diese App nutzt die YouTube Data API gemäß den <a href="https://www.youtube.com/static?template=terms" target="_blank">YouTube-Bedingungen</a>. Du stimmst zu, die API nur entsprechend dieser Bedingungen zu nutzen.</p>
+      <h3>2. Zustimmung zu YouTube Nutzungsbedingungen</h3>
+      <p><strong>WICHTIG: Durch die Nutzung dieser App stimmst du zu, an die <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube Nutzungsbedingungen</a> gebunden zu sein.</strong></p>
+      <p>Diese App nutzt YouTube API Services. Deine Nutzung von YouTube-Inhalten über diese App unterliegt den YouTube Nutzungsbedingungen. Du verpflichtest dich, alle anwendbaren YouTube-Richtlinien und -Bedingungen einzuhalten.</p>
       
-      <h3>3. Keine Gewährleistung</h3>
-      <p>Diese App wird "wie vorhanden" bereitgestellt. Wir garantieren nicht, dass sie fehlerfrei oder kontinuierlich verfügbar ist.</p>
+      <h3>3. Beschreibung des Dienstes</h3>
+      <p>YouTube Whitelist ist eine Webanwendung, die es dir ermöglicht:</p>
+      <ul>
+        <li>Öffentliche YouTube-Kanal- und Videoinformationen über YouTube API Services abzurufen und anzuzeigen</li>
+        <li>Deinen Video-Wiedergabefortschritt zu speichern und zu synchronisieren</li>
+        <li>Persönliche Listen von Videos, Playlists und Favoriten-Kanälen zu erstellen</li>
+        <li>Die Benutzeroberfläche an deine Präferenzen anzupassen</li>
+      </ul>
       
-      <h3>4. Haftungsbeschränkung</h3>
-      <p>Wir haften nicht für Datenverlust, Systemausfälle oder andere Schäden, die sich aus der Nutzung dieser App ergeben.</p>
+      <h3>4. Nutzung von YouTube API Services</h3>
+      <p><strong>YouTube Data API v3:</strong> Diese App nutzt die YouTube Data API v3 ausschließlich zum Abrufen öffentlicher Informationen:</p>
+      <ul>
+        <li>Kanal-Details (Titel, Beschreibungen, Thumbnails)</li>
+        <li>Video-Metadaten (Titel, Veröffentlichungsdatum, Dauer)</li>
+        <li>Playlist-Informationen</li>
+      </ul>
+      <p><strong>KEIN Zugriff auf private Daten:</strong> Diese App greift NICHT auf dein persönliches YouTube-Konto, deine Abos, Likes, Kommentare oder private Playlists zu.</p>
+      <p><strong>API-Quota-Limits:</strong> Die App unterliegt den YouTube API Quota-Beschränkungen. Wir nutzen intelligentes Caching, um API-Anfragen zu minimieren.</p>
       
-      <h3>5. Änderungen</h3>
-      <p>Diese Bedingungen können jederzeit geändert werden. Du wirst über wichtige Änderungen informiert.</p>
+      <h3>5. Anmeldung und Konto</h3>
+      <ul>
+        <li><strong>Google-Anmeldung erforderlich:</strong> Du musst dich mit einem Google-Konto anmelden, um alle Funktionen nutzen zu können</li>
+        <li><strong>Kontosicherheit:</strong> Du bist verantwortlich für die Sicherheit deiner Anmeldedaten</li>
+        <li><strong>Ein Konto pro Person:</strong> Du darfst nur ein Konto für deinen persönlichen Gebrauch erstellen</li>
+        <li><strong>Keine Mehrfachprojekte:</strong> Wir verwenden ein einzelnes Google Cloud Projekt (Project ID: whitelist-v3) für diese App</li>
+      </ul>
+      
+      <h3>6. Erlaubte Nutzung</h3>
+      <p>Du darfst diese App nutzen für:</p>
+      <ul>
+        <li>Persönliche, nicht-kommerzielle Zwecke</li>
+        <li>Organisieren und Verfolgen von YouTube-Videos von konfigurierten öffentlichen Kanälen</li>
+        <li>Synchronisierung deiner Einstellungen über mehrere Geräte</li>
+      </ul>
+      
+      <h3>7. Verbotene Nutzung</h3>
+      <p>Du darfst diese App NICHT nutzen für:</p>
+      <ul>
+        <li>Umgehung von YouTube-Beschränkungen oder -Richtlinien</li>
+        <li>Automatisierte, exzessive API-Anfragen (Bot-Verhalten)</li>
+        <li>Verbreitung von schädlichem Code oder Malware</li>
+        <li>Verletzung von Urheberrechten oder geistigen Eigentumsrechten Dritter</li>
+        <li>Kommerzielle Nutzung ohne ausdrückliche Genehmigung</li>
+        <li>Reverse Engineering, Dekompilierung oder Disassemblierung der App</li>
+      </ul>
+      
+      <h3>8. Geistiges Eigentum</h3>
+      <ul>
+        <li><strong>App-Eigentum:</strong> YouTube Whitelist und alle zugehörigen Rechte gehören dem Entwickler</li>
+        <li><strong>YouTube-Inhalte:</strong> Alle über YouTube API abgerufenen Inhalte gehören YouTube/Google und den jeweiligen Content-Erstellern</li>
+        <li><strong>Keine Übertragung von Rechten:</strong> Diese Nutzungsbedingungen übertragen dir keine Eigentumsrechte an der App</li>
+      </ul>
+      
+      <h3>9. Haftungsausschluss und "Wie Besehen"-Basis</h3>
+      <p><strong>Diese App wird "WIE BESEHEN" und "WIE VERFÜGBAR" ohne jegliche Gewährleistung bereitgestellt.</strong></p>
+      <ul>
+        <li>Wir garantieren NICHT, dass die App fehlerfrei, unterbrechungsfrei oder sicher ist</li>
+        <li>Wir garantieren NICHT die Verfügbarkeit oder Zuverlässigkeit von YouTube API Services</li>
+        <li>Wir garantieren NICHT die Richtigkeit, Vollständigkeit oder Aktualität der angezeigten Daten</li>
+        <li>Die Nutzung erfolgt auf eigenes Risiko</li>
+      </ul>
+      
+      <h3>10. Haftungsbeschränkung</h3>
+      <p>In maximal zulässigem Umfang haften wir NICHT für:</p>
+      <ul>
+        <li>Datenverlust oder -beschädigung</li>
+        <li>Unterbrechungen des Dienstes oder API-Ausfälle</li>
+        <li>Indirekte, zufällige oder Folgeschäden</li>
+        <li>Entgangene Gewinne oder Geschäftsverluste</li>
+        <li>Fehler oder Auslassungen in den angezeigten Daten</li>
+      </ul>
+      
+      <h3>11. Änderungen des Dienstes</h3>
+      <p>Wir behalten uns das Recht vor:</p>
+      <ul>
+        <li>Den Dienst jederzeit zu ändern, auszusetzen oder einzustellen</li>
+        <li>Funktionen hinzuzufügen oder zu entfernen</li>
+        <li>API-Limits oder -Beschränkungen anzupassen</li>
+        <li>Diese Nutzungsbedingungen jederzeit zu aktualisieren</li>
+      </ul>
+      <p>Du wirst über wesentliche Änderungen benachrichtigt. Die fortgesetzte Nutzung nach Änderungen gilt als Zustimmung.</p>
+      
+      <h3>12. Beendigung</h3>
+      <ul>
+        <li><strong>Durch dich:</strong> Du kannst die Nutzung jederzeit beenden, indem du dich abmeldest</li>
+        <li><strong>Durch uns:</strong> Wir können deinen Zugang bei Verstoß gegen diese Bedingungen sperren</li>
+        <li><strong>Nach Beendigung:</strong> Deine Daten bleiben in Firebase, bis du sie aktiv löschst oder uns zur Löschung kontaktierst</li>
+      </ul>
+      
+      <h3>13. Anwendbares Recht</h3>
+      <p>Diese Nutzungsbedingungen unterliegen deutschem Recht. Gerichtsstand ist Deutschland.</p>
+      
+      <h3>14. Salvatorische Klausel</h3>
+      <p>Sollte eine Bestimmung dieser Nutzungsbedingungen ungültig oder nicht durchsetzbar sein, bleiben die übrigen Bestimmungen davon unberührt.</p>
+      
+      <h3>15. Kontakt und Support</h3>
+      <p>Bei Fragen zu diesen Nutzungsbedingungen oder Support-Anfragen kontaktiere uns:</p>
+      <p><strong>E-Mail:</strong> <a href="mailto:timbohartmann2005@gmail.com">timbohartmann2005@gmail.com</a></p>
+      <p><strong>Verantwortlicher:</strong> Timbo Hartmann</p>
+      
+      <h3>16. Wichtige Links</h3>
+      <ul>
+        <li><a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube Nutzungsbedingungen</a> (Du bist verpflichtet, diese einzuhalten)</li>
+        <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Datenschutzerklärung</a></li>
+        <li><a href="https://developers.google.com/youtube/terms/api-services-terms-of-service" target="_blank" rel="noopener noreferrer">YouTube API Services Terms of Service</a></li>
+      </ul>
+      
+      <p style="margin-top: 2rem; font-size: 0.9rem; color: var(--muted);">
+        <strong>Letzte Aktualisierung:</strong> 12. November 2025<br>
+        <strong>Version:</strong> 2.0
+      </p>
     </div>
   </section>
   <section id="settingsView" class="section hidden">
@@ -1423,7 +1671,8 @@ document.addEventListener('DOMContentLoaded', () => {
         myPlaylists: new Map(), // Playlist-ID -> Playlist-Object für "Meine Playlists"
         current: { 
             channelId: null, tab: 'videos', videosPageToken: null, 
-            playlistsPageToken: null, player: null, playerStateInterval: null, searchQuery: null, searchOrder: 'date'
+            playlistsPageToken: null, player: null, playerStateInterval: null, searchQuery: null, searchOrder: 'date',
+            openPlaylistId: null // Speichert welche Playlist gerade offen ist
         },
         lastChannelRoute: null,
         theme: 'dark', // 'dark' oder 'light'
@@ -1815,6 +2064,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             showNotification(channel.isFavorite ? 'Als Favorit markiert ⭐' : 'Favorit entfernt ☆', 'success');
+            
+            // Wenn wir auf der Startseite sind, aktualisiere auch die Anzeige dort
+            const currentView = parseRoute().view;
+            if (currentView === 'home') {
+                // Lade Startseite neu aus dem Cache
+                const cacheDoc = await homeCacheRef.get();
+                if (cacheDoc.exists) {
+                    renderHomeFromFirebase(cacheDoc.data());
+                }
+            }
         }
     };
     
@@ -2299,6 +2558,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update UI sofort
         console.log('🔄 Aktualisiere UI...');
         updateAllProgressBars();
+        
+        // Wenn wir auf der Startseite sind und "nur ungesehene" aktiviert ist, entferne das Video
+        const currentView = parseRoute().view;
+        if (currentView === 'home' && state.settings.showOnlyUnwatchedOnHome && !isCurrentlyMarked) {
+            // Video wurde als angesehen markiert - entferne es von der Startseite
+            const videoCards = document.querySelectorAll(`[data-video-id="${videoId}"]`);
+            videoCards.forEach(card => {
+                if (card.closest('#latestVideosGrid')) {
+                    card.remove();
+                }
+            });
+        }
+        
         console.log('✅ markAsWatched abgeschlossen');
     };
 
@@ -2308,7 +2580,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const videoId = video.videoId;
-        if (state.myList.has(videoId)) {
+        const wasInList = state.myList.has(videoId);
+        
+        if (wasInList) {
             // Remove from list
             state.myList.delete(videoId);
             await firebase.firestore().collection('users').doc(state.userId).collection('myList').doc(videoId).delete();
@@ -2322,10 +2596,27 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             showNotification('Video zu deiner Liste hinzugefügt ✓', 'success');
         }
+        
         // Update UI
         document.querySelectorAll(`[data-video-id="${videoId}"] .add-to-list-btn`).forEach(btn => {
             btn.classList.toggle('added', state.myList.has(videoId));
         });
+        
+        // Wenn wir in der "Meine Liste" Ansicht sind und das Video entfernt wurde, entferne die Karte
+        const currentView = parseRoute().view;
+        if (currentView === 'mylist' && wasInList) {
+            const videoCards = document.querySelectorAll(`[data-video-id="${videoId}"]`);
+            videoCards.forEach(card => {
+                if (card.closest('#mylistViewGrid')) {
+                    card.remove();
+                }
+            });
+            
+            // Wenn jetzt keine Videos mehr da sind, zeige Leer-Nachricht
+            if (state.myList.size === 0) {
+                els.mylistViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Deine Liste ist leer. Füge Videos mit dem + Button hinzu.</p>';
+            }
+        }
     };
 
     const loadMyList = async () => {
@@ -2559,6 +2850,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('🎨 Button Update:', btn, 'added?', shouldBeAdded);
                 btn.classList.toggle('added', shouldBeAdded);
             });
+            
+            // Wenn wir in der "Meine Playlists" Ansicht sind und die Playlist entfernt wurde, entferne die Karte
+            const currentView = parseRoute().view;
+            if (currentView === 'myplaylists' && !state.myPlaylists.has(playlistId)) {
+                const playlistCards = document.querySelectorAll(`[data-playlist-id="${playlistId}"]`);
+                playlistCards.forEach(card => {
+                    if (card.closest('#myPlaylistsViewGrid')) {
+                        card.remove();
+                        console.log('🗑️ Playlist-Karte entfernt aus View');
+                    }
+                });
+                
+                // Wenn jetzt keine Playlists mehr da sind, zeige Leer-Nachricht
+                if (state.myPlaylists.size === 0) {
+                    els.myPlaylistsViewGrid.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">Keine gespeicherten Playlists. Füge Playlists mit dem + Button hinzu.</p>';
+                }
+            }
             console.log('✅ toggleMyPlaylist abgeschlossen');
         } catch (error) {
             console.error('❌ Fehler in toggleMyPlaylist:', error);
@@ -3009,10 +3317,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const openPlayer = (videoId, title) => {
-        // Schließe Playlist-Overlay falls offen
-        if (els.playlistOverlay.classList.contains('show')) {
-            closePlaylist();
-        }
+        // NICHT die Playlist schließen - Player öffnet sich ÜBER der Playlist
+        // So kann man nach Video-Ende wieder zur Playlist zurück
         
         els.playerTitle.textContent = title || 'Video';
         els.overlay.classList.add('show');
@@ -3043,9 +3349,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.current.player?.destroy) state.current.player.destroy();
         state.current.player = null;
         els.overlay.classList.remove('show');
+        
+        // Wenn eine Playlist offen war, zeige sie wieder an (Player war ÜBER der Playlist)
+        // Playlist bleibt im Hintergrund, wird nur wieder sichtbar
     };
     
     const openPlaylist = async (playlistId, title) => {
+        state.current.openPlaylistId = playlistId; // Speichere welche Playlist offen ist
         els.playlistTitle.textContent = title || 'Playlist';
         els.playlistOverlay.classList.add('show');
         els.playlistVideos.innerHTML = '';
@@ -3083,6 +3393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const closePlaylist = () => {
         els.playlistOverlay.classList.remove('show');
+        state.current.openPlaylistId = null; // Reset
     };
     
     const handleRoute = async () => {
@@ -3723,3 +4034,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
